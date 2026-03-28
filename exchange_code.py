@@ -7,15 +7,15 @@ SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
 CLIENT_SECRET_FILE = "client_secret.json"
 REDIRECT_URI = "http://localhost"
 
-# The code provided by the user
-CODE = "4/0Aci98E8pu-O__UlH5Eb5oxBy3jCxDVesU6UoL2U7CM-Y5VevsjpKLwWW_sPXU7uBvi4TDw"
+# The NEW code provided by the user
+CODE = "4/0Aci98E8sYxIsH0e9eYOmSUPqKc4phxIJioxBP5bUCuuYRrfzy3X7soC3uYGYENXz7kGcoA"
 
 def exchange_code():
     if not os.path.exists(CLIENT_SECRET_FILE):
         print("❌ ERROR: client_secret.json not found!")
         return
 
-    print("Exchanging code for token...")
+    print("Exchanging NEW code for token...")
     flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRET_FILE, SCOPES, redirect_uri=REDIRECT_URI)
     
     try:
@@ -28,7 +28,7 @@ def exchange_code():
             token_file.write(token_data)
 
         print("✅ SUCCESS! token_akonymous.json created.")
-        print("\n--- TOKEN JSON CONTENT (COPY FOR GITHUB) ---")
+        print("\n--- NEW TOKEN JSON CONTENT (COPY FOR GITHUB) ---")
         print(token_data)
         print("--------------------------------------------")
     except Exception as e:

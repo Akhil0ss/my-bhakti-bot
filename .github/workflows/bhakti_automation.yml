@@ -1,0 +1,40 @@
+name: Bhakti Daily Automation
+on:
+  schedule:
+    - cron: '30 1 * * *'    # 07:00 AM IST
+    - cron: '30 12 * * *'   # 06:00 PM IST
+    - cron: '30 15 * * *'   # 09:00 PM IST
+  workflow_dispatch: {}
+jobs:
+  upload-bhakti:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg
+          pip install -r requirements.txt
+          pip install -U --pre yt-dlp
+      - name: Setup Secrets
+        run: |
+          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
+          echo "${{ secrets.YT_DLP_COOKIES }}" > cookies.txt
+          echo '${{ secrets.YOUTUBE_TOKEN_JSON }}' > token_bhakti.json
+      - name: Restore Cache
+        uses: actions/cache/restore@v4
+        with:
+          path: download_history_bhakti.txt
+          key: history-bhakti-${{ github.run_id }}
+          restore-keys: history-bhakti-
+      - name: Run Bhakti Engine
+        run: python main.py --niche bhakti --cookies cookies.txt
+      - name: Save Cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: download_history_bhakti.txt
+          key: history-bhakti-${{ github.run_id }}

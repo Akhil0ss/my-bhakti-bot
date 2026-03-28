@@ -1,0 +1,42 @@
+name: Akonymous Daily Automation
+on:
+  schedule:
+    - cron: '30 9 * * *'     # 03:00 PM IST
+    - cron: '30 13 * * *'    # 07:00 PM IST
+    - cron: '30 16 * * *'    # 10:00 PM IST
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+jobs:
+  upload-akonymous:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg
+          pip install -r requirements.txt
+          pip install -U --pre yt-dlp
+      - name: Setup Secrets
+        run: |
+          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
+          echo "${{ secrets.YT_DLP_COOKIES }}" > cookies.txt
+          echo '${{ secrets.YOUTUBE_TOKEN_JSON_AKONYMOUS }}' > token_akonymous.json
+      - name: Restore Cache
+        uses: actions/cache/restore@v4
+        with:
+          path: download_history_akonymous.txt
+          key: history-akonymous-${{ github.run_id }}
+          restore-keys: history-akonymous-
+      - name: Run Akonymous Engine
+        run: python main.py --niche akonymous --cookies cookies.txt
+      - name: Save Cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: download_history_akonymous.txt
+          key: history-akonymous-${{ github.run_id }}
