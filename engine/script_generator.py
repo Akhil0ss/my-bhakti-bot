@@ -19,77 +19,50 @@ ENGAGEMENT_HOOKS = [
 def generate_rewrite_and_quote(original_title):
     """Takes original metadata and generates VIRAL Hindi Bhakti YouTube metadata."""
     api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        raise ValueError("GEMINI_API_KEY not found in .env file!")
-    
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-2.5-flash")
-    
     engagement_hook = random.choice(ENGAGEMENT_HOOKS)
     
-    prompt = f"""You are an expert Hindu Devotional YouTube Shorts content strategist.
-I have a viral Bhakti reel with this original title/description: "{original_title}"
-
-Your job is to create MAXIMUM VIRAL YouTube Shorts metadata in Hindi.
-
-RULES FOR TITLE:
-- Must be in Hindi (Devanagari) with 2-3 emojis
-- Must create CURIOSITY or FEAR or EMOTION
-- Use one of these PROVEN viral formulas:
-  * "आज ये देख लो! [hook] 😱🙏"
-  * "⚠️ मत करना ये गलती! [consequence] 🔱"
-  * "भगवान [deity] का ये रहस्य कोई नहीं जानता 🤯🕉️"  
-  * "💔 जब [situation], तो बस ये सुनो... 🙏"
-  * "🔱 [deity] भक्तों के लिए बड़ी खबर! [hook] ✨"
-  * "ये मंत्र सुनो, चमत्कार होगा! 🕉️🔥"
-  * "😱 [deity] ने दिया संकेत! ये देखो क्या हुआ..."
-- Keep title under 70 characters
-- MUST include #Shorts at the end
-
-RULES FOR DESCRIPTION:
-- Line 1: A powerful 1-line Hindi Bhakti motivational quote
-- Line 2: Empty line
-- Line 3: This EXACT engagement hook: "{engagement_hook}"
-- Line 4: Empty line
-- Lines 5+: 15 trending SEO hashtags
-- Last line: #Shorts #YouTubeShorts #Bhakti #Viral
-
-RULES FOR TAGS:
-- 15 tags mixing Hindi and English
-- Must include: bhakti, mahadev, krishna, ram, hanuman, hindu, sanatan, shorts, viral
-
-Format EXACTLY:
-TITLE: [title] #Shorts
-DESCRIPTION: [description]
-TAGS: #tag1 #tag2 ... #tag15"""
-
-    print("  [INFO] Generating VIRAL Hindi Bhakti Metadata via Gemini...")
-    response = model.generate_content(prompt)
-    output = response.text.strip()
-    
-    # Defaults with engagement hook baked in
-    title = "आज ये देख लो! भगवान का चमत्कार 😱🙏 #Shorts"
+    # Defaults in case of API failure
+    title = f"आज ये देख लो! भगवान का चमत्कार 😱🙏 #Shorts"
     description = f"🙏 जय श्री राम! भगवान हर पल आपके साथ हैं।\n\n{engagement_hook}\n\n#Bhakti #Mahadev #Krishna #Ram #Hanuman #Hindu #SanatanDharma #God #Devotional #Shorts #YouTubeShorts #HindiShorts #BhaktiStatus #JaiShreeRam #HarHarMahadev #Viral"
     tags = "#Bhakti #Mahadev #Krishna #Ram #Hanuman #Hindu #SanatanDharma #Shorts #YouTubeShorts #Devotional #BhaktiStatus #HindiShorts #JaiShreeRam #HarHarMahadev #Viral"
-    
-    for line in output.split("\n"):
-        if line.startswith("TITLE:"):
-            title = line.replace("TITLE:", "").strip()
-            if "#Shorts" not in title:
-                title += " #Shorts"
-        elif line.startswith("TAGS:"):
-            tags = line.replace("TAGS:", "").strip()
-        elif line.startswith("DESCRIPTION:"):
-            raw_desc = output.split("DESCRIPTION:")[1].split("TAGS:")[0].strip()
-            # Force engagement hook into description
-            if engagement_hook not in raw_desc:
-                raw_desc += f"\n\n{engagement_hook}"
-            description = raw_desc
-    
+
+    if not api_key:
+        print("  [WARN] GEMINI_API_KEY not found. Using defaults.")
+        return {"title": title, "tags": tags, "description": description}
+
+    try:
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel("gemini-2.0-flash") # Use stable model
+        
+        prompt = f"""You are an expert Hindu Devotional YouTube Shorts content strategist.
+I have a viral Bhakti reel with this original title: "{original_title}"
+Create MAXIMUM VIRAL YouTube Shorts metadata in Hindi.
+TITLE: [Viral Hindi Title with emojis] #Shorts
+DESCRIPTION: [Hindi Bhakti Quote] \n\n {engagement_hook} \n\n #Shorts #Bhakti #Viral
+TAGS: #bhakti #viral #trending #shorts"""
+
+        print("  [INFO] Generating VIRAL Hindi Bhakti Metadata via Gemini...")
+        response = model.generate_content(prompt)
+        output = response.text.strip()
+        
+        for line in output.split("\n"):
+            if line.upper().startswith("TITLE:"):
+                title = line.split(":", 1)[1].strip()
+                if "#Shorts" not in title: title += " #Shorts"
+            elif line.upper().startswith("TAGS:"):
+                tags = line.split(":", 1)[1].strip()
+            elif line.upper().startswith("DESCRIPTION:"):
+                parts = output.split("DESCRIPTION:", 1)
+                if len(parts) > 1:
+                    raw_desc = parts[1].split("TAGS:")[0].strip()
+                    if engagement_hook not in raw_desc:
+                        raw_desc += f"\n\n{engagement_hook}"
+                    description = raw_desc
+    except Exception as e:
+        print(f"  [WARN] Gemini Generation failed ({e}). Using viral defaults.")
+
     if "#Shorts" not in description:
         description += "\n#Shorts #YouTubeShorts"
-    
-    print(f"  [OK] Title: {title}")
     
     return {
         "title": title,
