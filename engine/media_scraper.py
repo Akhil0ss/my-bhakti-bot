@@ -9,7 +9,22 @@ FALLBACK_TIKTOK_URLS = [
     "https://www.tiktok.com/@sanatan_path/video/7234567890123456789"
 ]
 
-TIKTOK_TAGS = ["mahadev", "krishna", "ram", "hanuman", "bhakti", "hinduism"]
+# Updated for AI-Cinematic Content only
+TIKTOK_KEYWORDS = [
+    "Hindu God AI Animation", 
+    "Mahadev 3D Cinematic", 
+    "Lord Krishna AI Divine",
+    "Sanatan Dharma AI Art",
+    "Lord Ram 4K Cinematic AI",
+    "Hanuman 3D Animation"
+]
+
+# Filtering thresholds for Quality Control
+MIN_LIKES = 1000
+MIN_VIEWS = 10000
+
+# Exclude narrated / vlog style content
+BLACKLIST_KEYWORDS = ["vlog", "podcast", "interview", "talking", "narrated", "reaction", "review", "story", "fact"]
 
 HISTORY_FILE = "downloaded.txt"
 
@@ -23,78 +38,68 @@ def save_history(vid_id):
     with open(HISTORY_FILE, "a", encoding="utf-8") as f:
         f.write(f"{vid_id}\n")
 
-def _download_via_tikwm(url, output_dir, history, vid_id=None):
-    """Download a specific TikTok URL using TikWM API."""
-    try:
-        api_url = f"https://www.tikwm.com/api/?url={url}"
-        resp = requests.get(api_url, timeout=20).json()
-        if resp.get("code") == 0 and resp.get("data"):
-            data = resp["data"]
-            video_url = data.get("play") # No watermark
-            if not video_url:
-                return None
-            
-            v_id = vid_id or data.get("id")
-            if v_id in history:
-                return None
-                
-            print(f"  [TIKWM] Downloading TikTok ID: {v_id}")
-            video_content = requests.get(video_url, timeout=40).content
-            filepath = os.path.join(output_dir, "raw_video.mp4")
-            with open(filepath, "wb") as f:
-                f.write(video_content)
-            
-            save_history(v_id)
-            return {
-                "filepath": filepath,
-                "original_title": data.get("title", "Viral Bhakti Video"),
-                "id": v_id,
-                "source": "tiktok"
-            }
-    except Exception as e:
-        print(f"  [TIKWM] Download error: {e}")
-    return None
-
 def download_media(output_dir="output", cookies_path=None):
-    """TikTok-only strategy using TikWM Search + Specific URLs."""
+    """AI-First TikTok strategy focusing only on high-engagement cinematic clips."""
     os.makedirs(output_dir, exist_ok=True)
     history = get_history()
     
-    # 1. Try TikWM Search API (if available)
-    tag = random.choice(TIKTOK_TAGS)
-    print(f"[1/1] Searching TikTok for: #{tag}...")
+    # Select a high-quality keyword
+    keyword = random.choice(TIKTOK_KEYWORDS)
+    print(f"  [TIKWM] Searching for high-quality AI content: \"{keyword}\"...")
     
     try:
-        # Community search endpoint for TikWM
-        search_api = f"https://www.tikwm.com/api/feed/search?keywords={tag}&count=12"
+        # TikWM search endpoint
+        search_api = f"https://www.tikwm.com/api/feed/search?keywords={keyword}&count=20"
         response = requests.get(search_api, timeout=15).json()
         
         if response.get("code") == 0 and response.get("data"):
-            videos = response["data"].get("videos", response["data"]) # Structure can vary
-            if isinstance(videos, list):
-                random.shuffle(videos)
-                for v in videos:
-                    v_id = v.get("video_id") or v.get("id")
-                    if v_id and v_id not in history:
-                        # TikWM search results often have the 'play' URL directly
-                        play_url = v.get("play")
-                        if play_url:
-                             print(f"  [TIKWM] Found viral video: {v_id}")
-                             video_content = requests.get(play_url, timeout=40).content
-                             filepath = os.path.join(output_dir, "raw_video.mp4")
-                             with open(filepath, "wb") as f:
-                                 f.write(video_content)
-                             save_history(v_id)
-                             return {
-                                 "filepath": filepath,
-                                 "original_title": v.get("title", "Bhakti Tik"),
-                                 "id": v_id,
-                                 "source": "tiktok"
-                             }
-    except Exception as e:
-        print(f"  [TIKWM] Search failed: {e}")
+            videos = response["data"].get("videos", [])
+            if not videos:
+                print("  [WARN] No videos found for this keyword.")
+                return None
+                
+            # Randomize to get fresh content every time
+            random.shuffle(videos)
 
-    print("  [WARN] Search failed or no new videos. TikTok-only mode active.")
+            for v in videos:
+                v_id = v.get("video_id") or v.get("id")
+                title = v.get("title", "").lower()
+                likes = int(v.get("digg_count", 0))
+                views = int(v.get("play_count", 0))
+                
+                # 1. Deduplication check
+                if not v_id or v_id in history:
+                    continue
+                
+                # 2. Blacklist check (No narrators/vlogs)
+                is_blacklisted = any(word in title for word in BLACKLIST_KEYWORDS)
+                if is_blacklisted:
+                    continue
+                
+                # 3. High Engagement check
+                if likes < MIN_LIKES or views < MIN_VIEWS:
+                    continue
+                
+                # 4. Final attempt to download 'No Watermark' version
+                play_url = v.get("play")
+                if play_url:
+                    print(f"  [OK] Found high-engagement AI video: {v_id} (Likes: {likes}, Views: {views})")
+                    video_content = requests.get(play_url, timeout=40).content
+                    filepath = os.path.join(output_dir, "raw_video.mp4")
+                    with open(filepath, "wb") as f:
+                        f.write(video_content)
+                    
+                    save_history(v_id)
+                    return {
+                        "filepath": filepath,
+                        "original_title": v.get("title", "Cinematic Bhakti"),
+                        "id": v_id,
+                        "source": "tiktok"
+                    }
+    except Exception as e:
+        print(f"  [TIKWM] Search/Download failed: {e}")
+
+    print("  [FAIL] Could not find a fresh high-quality AI video. Retrying later.")
     return None
 
 if __name__ == "__main__":

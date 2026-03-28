@@ -16,23 +16,63 @@ ENGAGEMENT_HOOKS = [
     "🙏 इस वीडियो को LIKE करो — भगवान देख रहे हैं!",
 ]
 
+# Fallback Metadata Pool for varied uploads when API is down
+FALLBACK_POOL = [
+    {
+        "title": "आज ये देख लो! भगवान का चमत्कार 😱🙏 #Shorts",
+        "description": "🙏 जय श्री राम! भगवान की कृपा आप पर सदा बनी रहे।\n\n#Shorts #Bhakti #JaiShreeRam #Viral"
+    },
+    {
+        "title": "⚠️ ये गलती कभी मत करना! महादेव देख रहे हैं 🔱 #Shorts",
+        "description": "🔱 हर हर महादेव! शिव जी के इस रहस्य को जानिए।\n\n#Shorts #Mahadev #Shiva #Sanatan"
+    },
+    {
+        "title": "भगवान कृष्ण का ये संदेश आपका जीवन बदल देगा 🤯🕉️ #Shorts",
+        "description": "💛 राधे राधे! श्री कृष्ण की अनमोल वाणी जो हर किसी को सुननी चाहिए।\n\n#Shorts #Krishna #RadheRadhe #Bhakti"
+    },
+    {
+        "title": "हनुमान जी ने दिया संकेत! ये देखो क्या हुआ... 😱🙏 #Shorts",
+        "description": "🙏 जय बजरंगबली! हनुमान जी की रक्षा कवच आपके साथ है।\n\n#Shorts #Hanuman #Bajrangbali #Power"
+    },
+    {
+        "title": "🔱 काशी के इस रहस्य को कोई नहीं जानता! 🕉️🔥 #Shorts",
+        "description": "🕉️ हर हर महादेव! अध्यात्म की गहरी बातें और शिव की शक्ति।\n\n#Shorts #Kashi #Mahadev #Spiritual"
+    },
+    {
+        "title": "💔 जब अकेला महसूस हो, तो बस ये सुनो... 🙏 #Shorts",
+        "description": "✨ भगवान कभी आपको अकेला नहीं छोड़ते। खुद पर और उन पर भरोसा रखें।\n\n#Shorts #Motivation #God #Peace"
+    },
+    {
+        "title": "😱 क्या आपने महादेव का ये चमत्कार देखा? 🔱 #Shorts",
+        "description": "🔱 साक्षात महादेव! इस वीडियो को अंत तक जरूर देखें।\n\n#Shorts #Miracle #Mahakal #Shiv"
+    },
+    {
+        "title": "ये मंत्र रोज़ सुबह सुनो, चमत्कार होगा! 🕉️✨ #Shorts",
+        "description": "🕉️ शान्ति और शक्ति का अनुभव करें। इस मंत्र में बहुत ताकत है।\n\n#Shorts #Mantra #MorningVibes #Devotional"
+    }
+]
+
 def generate_rewrite_and_quote(original_title):
     """Takes original metadata and generates VIRAL Hindi Bhakti YouTube metadata."""
     api_key = os.getenv("GEMINI_API_KEY")
     engagement_hook = random.choice(ENGAGEMENT_HOOKS)
     
-    # Defaults in case of API failure
-    title = f"आज ये देख लो! भगवान का चमत्कार 😱🙏 #Shorts"
-    description = f"🙏 जय श्री राम! भगवान हर पल आपके साथ हैं।\n\n{engagement_hook}\n\n#Bhakti #Mahadev #Krishna #Ram #Hanuman #Hindu #SanatanDharma #God #Devotional #Shorts #YouTubeShorts #HindiShorts #BhaktiStatus #JaiShreeRam #HarHarMahadev #Viral"
-    tags = "#Bhakti #Mahadev #Krishna #Ram #Hanuman #Hindu #SanatanDharma #Shorts #YouTubeShorts #Devotional #BhaktiStatus #HindiShorts #JaiShreeRam #HarHarMahadev #Viral"
+    # Select a random fallback from the pool initially
+    fallback = random.choice(FALLBACK_POOL)
+    title = fallback["title"]
+    # Ensure title ends with #Shorts
+    if "#Shorts" not in title: title += " #Shorts"
+    
+    description = f"{fallback['description']}\n\n{engagement_hook}\n\n#Bhakti #Hindu #SanatanDharma #God #Devotional #YouTubeShorts #HindiShorts #BhaktiStatus #Viral"
+    tags = "#Bhakti #Mahadev #Krishna #Ram #Hanuman #Hindu #SanatanDharma #Shorts #YouTubeShorts #Devotional #BhaktiStatus #HindiShorts #Viral"
 
     if not api_key:
-        print("  [WARN] GEMINI_API_KEY not found. Using defaults.")
+        print("  [WARN] GEMINI_API_KEY not found. Using varied defaults.")
         return {"title": title, "tags": tags, "description": description}
 
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-2.0-flash") # Use stable model
+        model = genai.GenerativeModel("gemini-2.0-flash") 
         
         prompt = f"""You are an expert Hindu Devotional YouTube Shorts content strategist.
 I have a viral Bhakti reel with this original title: "{original_title}"
@@ -59,7 +99,7 @@ TAGS: #bhakti #viral #trending #shorts"""
                         raw_desc += f"\n\n{engagement_hook}"
                     description = raw_desc
     except Exception as e:
-        print(f"  [WARN] Gemini Generation failed ({e}). Using viral defaults.")
+        print(f"  [WARN] Gemini Generation failed ({e}). Using varied defaults from pool.")
 
     if "#Shorts" not in description:
         description += "\n#Shorts #YouTubeShorts"
