@@ -1,53 +1,36 @@
 name: Aura Shorts Auto Upload
-
 on:
   schedule:
-    # 5 videos per day at optimal Bhakti audience times (IST = UTC + 5:30)
-    - cron: '30 23 * * *'   # 5:00 AM IST (previous day 23:30 UTC)
-    - cron: '30 2 * * *'    # 8:00 AM IST
-    - cron: '30 6 * * *'    # 12:00 PM IST
-    - cron: '30 13 * * *'   # 7:00 PM IST
-    - cron: '30 15 * * *'   # 9:00 PM IST
-  workflow_dispatch: {}     # Manual trigger button
-
+    - cron: '30 23 * * *'
+    - cron: '30 2 * * *'
+    - cron: '30 6 * * *'
+    - cron: '30 13 * * *'
+    - cron: '30 15 * * *'
+  workflow_dispatch: {}
 jobs:
   upload-short:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
-      - name: Install Dependencies
-        run: |
+      - run: |
           pip install -r requirements.txt
-          pip install yt-dlp
-
-      - name: Setup Secrets
-        run: |
+          pip install -U --pre yt-dlp
+      - run: |
           echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
           echo "PEXELS_API_KEY=${{ secrets.PEXELS_API_KEY }}" >> .env
           echo '${{ secrets.YOUTUBE_TOKEN_JSON }}' > token.json
-
-      - name: Restore Download History
-        uses: actions/cache@v4
+          echo '${{ secrets.YT_DLP_COOKIES }}' > cookies.json
+      - uses: actions/cache@v4
         with:
           path: downloaded.txt
           key: download-history-${{ github.run_number }}
-          restore-keys: |
-            download-history-
-
-      - name: Run Aura Engine
-        run: python main.py
-
-      - name: Save Download History
-        if: always()
+          restore-keys: download-history-
+      - run: python main.py --cookies cookies.json
+      - if: always()
         uses: actions/cache/save@v4
         with:
           path: downloaded.txt

@@ -8,16 +8,16 @@ from engine.youtube_uploader import upload_video
 
 OUTPUT_DIR = "output"
 
-def run(no_upload=False):
+def run(no_upload=False, cookies_path=None):
     print("==================================================")
     print("  AURA REPURPOSE ENGINE - Starting Pipeline")
     print("==================================================\n")
-
+ 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-
+ 
     # Step 1: Scrape Viral Video
     print("[1/4] Scraping viral clip...")
-    scraped_data = download_media(output_dir=OUTPUT_DIR)
+    scraped_data = download_media(output_dir=OUTPUT_DIR, cookies_path=cookies_path)
     if not scraped_data or not scraped_data.get("filepath"):
         print("  [FATAL] Failed to scrape video. Exiting.")
         sys.exit(1)
@@ -70,6 +70,7 @@ def run(no_upload=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Aura YouTube Shorts Repurposer")
     parser.add_argument("--no-upload", action="store_true", help="Skip YouTube upload step")
+    parser.add_argument("--cookies", type=str, help="Path to cookies file")
     args = parser.parse_args()
     
-    run(no_upload=args.no_upload)
+    run(no_upload=args.no_upload, cookies_path=args.cookies)

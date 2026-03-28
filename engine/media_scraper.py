@@ -7,14 +7,22 @@ TIKTOK_TAGS = [
     "https://www.tiktok.com/tag/krishnabhajan",
     "https://www.tiktok.com/tag/rammandir",
     "https://www.tiktok.com/tag/hanumanchalisa",
-    "https://www.tiktok.com/tag/sanatandharma"
+    "https://www.tiktok.com/tag/sanatandharma",
+    "https://www.tiktok.com/tag/bholenath",
+    "https://www.tiktok.com/tag/radhekrishna",
+    "https://www.tiktok.com/tag/shivashambo",
+    "https://www.tiktok.com/tag/jaishreeram",
+    "https://www.tiktok.com/tag/mahakal",
+    "https://www.tiktok.com/tag/hindugods"
 ]
 
 INSTA_TAGS = [
     "https://www.instagram.com/explore/tags/bhaktireels/",
     "https://www.instagram.com/explore/tags/mahadevstatus/",
     "https://www.instagram.com/explore/tags/krishnavani/",
-    "https://www.instagram.com/explore/tags/jaishreeram/"
+    "https://www.instagram.com/explore/tags/jaishreeram/",
+    "https://www.instagram.com/explore/tags/hanumanji/",
+    "https://www.instagram.com/explore/tags/hinduism/"
 ]
 
 YOUTUBE_TAGS = [
@@ -36,14 +44,30 @@ def save_history(vid_id):
     with open(HISTORY_FILE, "a", encoding="utf-8") as f:
         f.write(f"{vid_id}\n")
 
-def _download_with_ytdlp(url, output_dir, history, is_search=False):
+def _download_with_ytdlp(url, output_dir, history, is_search=False, cookies_path=None):
     """Internal helper to download 1 random NEW video from a playlist/tag URL or search query."""
-    ydl_opts_extract = {
-        'extract_flat': True,
+    
+    # CLOUD BYPASS: Try to use Android/iOS client name as it's often less restricted
+    extractor_args = {
+        'youtube': {'client': ['android', 'web']},
+        'tiktok': {'api_hostname': 'api16-normal-c-useast1a.tiktokv.com'}
+    }
+
+    ydl_opts_base = {
         'quiet': True,
         'no_warnings': True,
+        'extractor_args': extractor_args,
+    }
+
+    # Add cookies if provided (Essential for GitHub Actions/Cloud)
+    if cookies_path and os.path.exists(cookies_path):
+        ydl_opts_base['cookiefile'] = cookies_path
+        print(f"  [INFO] Using cookies from: {cookies_path}")
+
+    ydl_opts_extract = {
+        **ydl_opts_base,
+        'extract_flat': True,
         'playlist_end': 20, 
-        'extractor_args': {'tiktok': {'api_hostname': 'api16-normal-c-useast1a.tiktokv.com'}}
     }
     
     with yt_dlp.YoutubeDL(ydl_opts_extract) as ydl:
@@ -80,15 +104,13 @@ def _download_with_ytdlp(url, output_dir, history, is_search=False):
                 v_url = f"https://www.youtube.com/watch?v={selected['id']}"
 
         v_id = selected['id']
-        print(f"  [YT-DLP] Selected UNIQUE video ID: {v_id}...")
+        print(f"  [YT-DLP] Selected UNIQUE video ID: {v_id}. Downloading...")
         
         output_template = os.path.join(output_dir, "raw_video.%(ext)s")
         ydl_opts_dl = {
+            **ydl_opts_base,
             'format': 'best', # Pre-merged for quality & speed
             'outtmpl': output_template,
-            'quiet': True,
-            'no_warnings': True,
-            'extractor_args': {'tiktok': {'api_hostname': 'api16-normal-c-useast1a.tiktokv.com'}}
         }
         
         with yt_dlp.YoutubeDL(ydl_opts_dl) as ydl_dl:
@@ -110,7 +132,7 @@ def _download_with_ytdlp(url, output_dir, history, is_search=False):
                 "id": v_id
             }
 
-def download_media(output_dir="output"):
+def download_media(output_dir="output", cookies_path=None):
     os.makedirs(output_dir, exist_ok=True)
     history = get_history()
 
@@ -118,7 +140,7 @@ def download_media(output_dir="output"):
     print("[1/2] Attempting TikTok Scrape (Primary)...")
     tiktok_url = random.choice(TIKTOK_TAGS)
     try:
-        result = _download_with_ytdlp(tiktok_url, output_dir, history)
+        result = _download_with_ytdlp(tiktok_url, output_dir, history, cookies_path=cookies_path)
         if result:
             print(f"  [OK] TikTok video downloaded: {result['id']}")
             return result
@@ -129,7 +151,7 @@ def download_media(output_dir="output"):
     print("[2/2] Attempting Instagram Scrape (Fallback)...")
     insta_url = random.choice(INSTA_TAGS)
     try:
-        result = _download_with_ytdlp(insta_url, output_dir, history)
+        result = _download_with_ytdlp(insta_url, output_dir, history, cookies_path=cookies_path)
         if result:
             print(f"  [OK] Instagram video downloaded: {result['id']}")
             return result
@@ -140,7 +162,7 @@ def download_media(output_dir="output"):
     print("[Final Failsafe] Attempting YouTube Search...")
     query = random.choice(YOUTUBE_TAGS)
     try:
-        result = _download_with_ytdlp(f"ytsearch20:{query}", output_dir, history, is_search=True)
+        result = _download_with_ytdlp(f"ytsearch20:{query}", output_dir, history, is_search=True, cookies_path=cookies_path)
         if result:
             print(f"  [OK] YouTube video downloaded: {result['id']}")
             return result
