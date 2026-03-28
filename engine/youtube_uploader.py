@@ -19,18 +19,20 @@ PIN_COMMENTS = [
     "⚡ जय बजरंगबली! शेयर करो और देखो चमत्कार! 🙏\n\n👉 SUBSCRIBE = रोज़ भक्ति का डोज़! 🔔",
 ]
 
-def get_authenticated_service():
+def get_authenticated_service(token_file="token.json"):
     """Handles OAuth 2.0 authentication for YouTube API."""
     creds = None
-    if os.path.exists(TOKEN_FILE):
-        creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
+    
+    # Check if we should use a specific niche token file
+    if os.path.exists(token_file):
+        creds = Credentials.from_authorized_user_file(token_file, SCOPES)
         
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            print("  Refreshing YouTube OAuth token...")
+            print(f"  Refreshing YouTube OAuth token for {token_file}...")
             creds.refresh(Request())
         else:
-            print("  First time auth required. Please sign in.")
+            print(f"  First time auth required for {token_file}. Please sign in.")
             if not os.path.exists(CLIENT_SECRET_FILE):
                 raise FileNotFoundError(
                     f"'{CLIENT_SECRET_FILE}' not found! "
@@ -39,7 +41,7 @@ def get_authenticated_service():
             flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRET_FILE, SCOPES)
             creds = flow.run_local_server(port=0)
             
-        with open(TOKEN_FILE, "w") as token:
+        with open(token_file, "w") as token:
             token.write(creds.to_json())
             
     return build("youtube", "v3", credentials=creds)
@@ -70,9 +72,9 @@ def post_pinned_comment(youtube, video_id):
         print(f"  [WARN] Comment failed (not critical): {e}")
         return None
 
-def upload_video(video_path, title, description, tags_str, category_id="22"):
-    """Uploads a video to YouTube and posts a pinned engagement comment."""
-    youtube = get_authenticated_service()
+def upload_video(video_path, title, description, tags_str, token_file="token.json", category_id="22"):
+    """Uploads a video to YouTube using a specific token file."""
+    youtube = get_authenticated_service(token_file=token_file)
 
     # Clean hashtags into a list of words
     tags = [t.strip().replace("#", "") for t in tags_str.split() if t.startswith("#")]

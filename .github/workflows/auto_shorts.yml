@@ -1,5 +1,7 @@
 name: Aura Shorts Auto Upload
 on:
+  push:
+    branches: [main]
   schedule:
     - cron: '0 2 * * *'    # 07:30 AM IST (Morning Puja/Commute)
     - cron: '0 8 * * *'    # 01:30 PM IST (Lunch Break)
@@ -9,9 +11,12 @@ on:
     - cron: '0 19 * * *'   # 12:30 AM IST (Extra Night Buffer)
   workflow_dispatch: {}
 jobs:
-  upload-short:
+  upload-shorts:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      matrix:
+        niche: [bhakti, akonymous]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -25,18 +30,28 @@ jobs:
       - name: Setup Secrets
         run: |
           echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
-          echo "PEXELS_API_KEY=${{ secrets.PEXELS_API_KEY }}" >> .env
-          echo '${{ secrets.YOUTUBE_TOKEN_JSON }}' > token.json
           echo "${{ secrets.YT_DLP_COOKIES }}" > cookies.txt
-      - uses: actions/cache@v4
+          
+          # Inject the correct YouTube Token based on the niche
+          if [[ "${{ matrix.niche }}" == "bhakti" ]]; then
+            echo '${{ secrets.YOUTUBE_TOKEN_JSON }}' > token_bhakti.json
+          else
+            echo '${{ secrets.YOUTUBE_TOKEN_JSON_AKONYMOUS }}' > token_akonymous.json
+          fi
+
+      - name: Restore History Cache
+        uses: actions/cache/restore@v4
         with:
-          path: downloaded.txt
-          key: download-history-${{ github.run_number }}
-          restore-keys: download-history-
+          path: download_history_${{ matrix.niche }}.txt
+          key: history-${{ matrix.niche }}-${{ github.run_id }}
+          restore-keys: history-${{ matrix.niche }}-
+
       - name: Run Aura Engine
-        run: python main.py --cookies cookies.txt
-      - if: always()
+        run: python main.py --niche ${{ matrix.niche }} --cookies cookies.txt
+
+      - name: Save History Cache
+        if: always()
         uses: actions/cache/save@v4
         with:
-          path: downloaded.txt
-          key: download-history-${{ github.run_number }}
+          path: download_history_${{ matrix.niche }}.txt
+          key: history-${{ matrix.niche }}-${{ github.run_id }}
