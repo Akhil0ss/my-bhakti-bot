@@ -1,6 +1,7 @@
 import os
 import argparse
 import sys
+from dotenv import load_dotenv
 from engine.media_scraper import download_media
 from engine.script_generator import generate_rewrite_and_quote
 from engine.video_renderer import trim_video
@@ -10,6 +11,8 @@ from engine.niche_config import get_config
 OUTPUT_DIR = "output"
 
 def run(niche_name, no_upload=False, cookies_path=None):
+    load_dotenv()
+
     # Load niche configuration
     config = get_config(niche_name)
     
@@ -58,9 +61,13 @@ def run(niche_name, no_upload=False, cookies_path=None):
                 title=script_data['title'],
                 description=script_data['description'],
                 tags_str=script_data['tags'],
-                token_file=config["token_file"]
+                token_file=config["token_file"],
+                token_secret_env=config.get("token_secret")
             )
-            print(f"  [SUCCESS] VIDEO LIVE: {video_url}")
+            if video_url:
+                print(f"  [SUCCESS] VIDEO LIVE: {video_url}")
+            else:
+                print("  [ERROR] Upload did not complete. No video ID returned.")
         except Exception as e:
             print(f"  [ERROR] Upload failed: {e}")
 

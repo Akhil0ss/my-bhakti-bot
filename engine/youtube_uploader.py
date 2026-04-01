@@ -1,14 +1,33 @@
 import os
 import random
+import json
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+from google.auth.exceptions import RefreshError
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
 SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
 TOKEN_FILE = "token.json"
 CLIENT_SECRET_FILE = "client_secret.json"
+
+
+def _load_credentials(token_file, token_secret_env=None):
+    """Load OAuth credentials from env first, then disk as a fallback."""
+    if token_secret_env:
+        raw_token = os.getenv(token_secret_env, "").strip()
+        if raw_token:
+            token_info = json.loads(raw_token)
+            with open(token_file, "w") as token:
+                token.write(json.dumps(token_info))
+            print(f"  [INFO] Restored YouTube OAuth token from ${token_secret_env}.")
+            return Credentials.from_authorized_user_info(token_info, SCOPES)
+
+    if os.path.exists(token_file):
+        return Credentials.from_authorized_user_file(token_file, SCOPES)
+
+    return None
 
 # Pinned comment templates (forces engagement = algorithm boost)
 PIN_COMMENTS = [
@@ -19,18 +38,23 @@ PIN_COMMENTS = [
     "⚡ जय बजरंगबली! शेयर करो और देखो चमत्कार! 🙏\n\n👉 SUBSCRIBE = रोज़ भक्ति का डोज़! 🔔",
 ]
 
-def get_authenticated_service(token_file="token.json"):
+def get_authenticated_service(token_file="token.json", token_secret_env=None):
     """Handles OAuth 2.0 authentication for YouTube API."""
-    creds = None
-    
-    # Check if we should use a specific niche token file
-    if os.path.exists(token_file):
-        creds = Credentials.from_authorized_user_file(token_file, SCOPES)
-        
+    creds = _load_credentials(token_file, token_secret_env=token_secret_env)
+
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             print(f"  Refreshing YouTube OAuth token for {token_file}...")
-            creds.refresh(Request())
+            try:
+                creds.refresh(Request())
+            except RefreshError as e:
+                raise RuntimeError(
+                    f"YouTube token refresh failed for {token_file}: {e}. "
+                    "The refresh token is likely revoked/expired or the OAuth client changed. "
+                    f"Re-authorize this channel and update {token_file}"
+                    + (f" / ${token_secret_env}" if token_secret_env else "")
+                    + "."
+                ) from e
         else:
             print(f"  First time auth required for {token_file}. Please sign in.")
             if not os.path.exists(CLIENT_SECRET_FILE):
@@ -72,9 +96,9 @@ def post_pinned_comment(youtube, video_id):
         print(f"  [WARN] Comment failed (not critical): {e}")
         return None
 
-def upload_video(video_path, title, description, tags_str, token_file="token.json", category_id="22"):
+def upload_video(video_path, title, description, tags_str, token_file="token.json", token_secret_env=None, category_id="22"):
     """Uploads a video to YouTube using a specific token file."""
-    youtube = get_authenticated_service(token_file=token_file)
+    youtube = get_authenticated_service(token_file=token_file, token_secret_env=token_secret_env)
 
     # Clean hashtags into a list of words
     tags = [t.strip().replace("#", "") for t in tags_str.split() if t.startswith("#")]

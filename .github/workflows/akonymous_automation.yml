@@ -23,7 +23,8 @@ jobs:
           pip install -U --pre yt-dlp
       - name: Setup Secrets
         run: |
-          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
+          echo "GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}" > .env
+          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
           echo "${{ secrets.YT_DLP_COOKIES }}" > cookies.txt
           echo '${{ secrets.YOUTUBE_TOKEN_JSON_AKONYMOUS }}' > token_akonymous.json
       - name: Restore Cache
