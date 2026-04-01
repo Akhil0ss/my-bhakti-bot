@@ -31,12 +31,13 @@ def _is_vertical_video(width, height):
     return height > width and (height / width) >= 1.5
 
 
-def _validate_downloaded_video(filepath, min_duration, max_duration):
+def _validate_downloaded_video(filepath, min_duration, max_duration=None):
     try:
         with VideoFileClip(filepath) as clip:
             width, height = clip.size
             duration = clip.duration or 0
-        is_valid = _is_vertical_video(width, height) and min_duration <= duration <= max_duration
+        duration_valid = duration >= min_duration and (max_duration is None or duration <= max_duration)
+        is_valid = _is_vertical_video(width, height) and duration_valid
         return is_valid, width, height, duration
     except Exception as e:
         print(f"  [WARN] Download validation failed: {e}")
@@ -267,7 +268,7 @@ def _select_candidate_from_keyword(
             continue
         if likes < min_likes or views < min_views:
             continue
-        if duration and not (min_duration <= duration <= max_duration):
+        if duration and not (duration >= min_duration and (max_duration is None or duration <= max_duration)):
             continue
         if width and height and not _is_vertical_video(width, height):
             continue
@@ -284,7 +285,7 @@ def _select_candidate_from_keyword(
     return candidates
 
 
-def download_media(config, output_dir="output", cookies_path=None):
+def download_media(config, output_dir="output", cookies_path=None, min_duration_override=None, max_duration_override=None):
     """AI-First TikTok strategy using niche-specific configuration."""
     os.makedirs(output_dir, exist_ok=True)
     history_file = config.get("history_file", "downloaded.txt")
@@ -320,8 +321,8 @@ def download_media(config, output_dir="output", cookies_path=None):
         ]
         random.shuffle(search_pool)
         keywords_to_try = search_pool[: min(len(search_pool), config.get("max_queries_per_run", 80))]
-        min_duration = config.get("min_duration", 30)
-        max_duration = config.get("max_duration", 60)
+        min_duration = min_duration_override if min_duration_override is not None else config.get("min_duration", 30)
+        max_duration = max_duration_override if max_duration_override is not None else config.get("max_duration", 60)
 
         for idx, profile in enumerate(threshold_profiles, start=1):
             if idx > 1:

@@ -113,7 +113,7 @@ def _score_title(title, original_title):
     score = overlap * 8
     score += 10 if 35 <= len(title) <= 75 else 0
     score += 4 if any(char.isdigit() for char in title) else 0
-    score += 5 if any(token in title_l for token in ["?", "why", "how", "secret", "truth", "real", "hidden", "shocking"]) else 0
+    score += 7 if any(token in title_l for token in ["?", "why", "how", "secret", "truth", "real", "hidden", "shocking", "viral", "exposed", "revealed", "mystery"]) else 0
     hashtag_count = len(re.findall(r"#\w+", title))
     score += 6 if 1 <= hashtag_count <= 2 else 0
     score -= 6 if hashtag_count > 2 else 0
@@ -159,8 +159,8 @@ def _build_prompt(original_title, config, engagement_hook, series_label):
         f"Recurring series identity to preserve: {series_label}\n\n"
         "Rules:\n"
         "1. Metadata must match the exact source topic, not generic channel themes.\n"
-        "2. Title must be ultra-clickable, emotionally strong, curiosity-driven, under 80 characters, and must include #shorts and #foryou.\n"
-        "3. Description must feel native to the topic, add intrigue/value, support retention, and end with exactly 10 relevant hashtags.\n"
+        "2. Title must be ultra-clickable, emotionally strong, curiosity-driven, recent/trending in tone, use tasteful clickbait, stay under 80 characters, and must include #shorts and #foryou.\n"
+        "3. Description must feel native to the topic, add intrigue/value, support retention, mention recent trend energy when natural, and end with exactly 10 relevant hashtags.\n"
         "4. Tags must be high-intent YouTube Shorts hashtags directly relevant to the source topic and aligned to the current trend window.\n"
         "5. Avoid generic filler, keyword stuffing, or misleading claims.\n\n"
         "Please provide the response in this EXACT format:\n"
@@ -225,29 +225,47 @@ def _generate_with_groq(prompt, niche):
     if not api_key:
         return None
 
-    print(f"  [INFO] Generating {niche.upper()} metadata via Groq...")
-    response = requests.post(
-        "https://api.groq.com/openai/v1/chat/completions",
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        json={
-            "model": os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
-            "temperature": 0.8,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": "You generate viral YouTube Shorts metadata and must follow the requested output format exactly.",
+    requested_model = os.getenv("GROQ_MODEL", "").strip()
+    candidate_models = [model for model in [
+        requested_model,
+        "openai/gpt-oss-120b",
+        "llama-3.3-70b-versatile",
+        "openai/gpt-oss-20b",
+    ] if model]
+
+    last_error = None
+    for model_name in dict.fromkeys(candidate_models):
+        print(f"  [INFO] Generating {niche.upper()} metadata via Groq ({model_name})...")
+        try:
+            response = requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
                 },
-                {"role": "user", "content": prompt},
-            ],
-        },
-        timeout=45,
-    )
-    response.raise_for_status()
-    data = response.json()
-    return data["choices"][0]["message"]["content"].strip()
+                json={
+                    "model": model_name,
+                    "temperature": 0.8,
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": "You generate viral YouTube Shorts metadata and must follow the requested output format exactly.",
+                        },
+                        {"role": "user", "content": prompt},
+                    ],
+                },
+                timeout=45,
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data["choices"][0]["message"]["content"].strip()
+        except Exception as e:
+            last_error = e
+            print(f"  [WARN] Groq model {model_name} failed: {e}")
+
+    if last_error:
+        raise last_error
+    return None
 
 
 def _generate_with_gemini(prompt, niche):

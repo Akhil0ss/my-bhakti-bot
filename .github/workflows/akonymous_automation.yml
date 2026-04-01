@@ -9,6 +9,9 @@ on:
   workflow_dispatch: {}
 jobs:
   upload-akonymous:
+    concurrency:
+      group: akonymous-automation
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

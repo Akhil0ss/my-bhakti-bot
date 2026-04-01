@@ -101,6 +101,7 @@ def upload_video(
     title,
     description,
     tags_str,
+    youtube=None,
     token_file="token.json",
     token_secret_env=None,
     category_id="22",
@@ -110,7 +111,7 @@ def upload_video(
     enable_pinned_comment=False,
 ):
     """Uploads a video to YouTube using a specific token file."""
-    youtube = get_authenticated_service(token_file=token_file, token_secret_env=token_secret_env)
+    youtube = youtube or get_authenticated_service(token_file=token_file, token_secret_env=token_secret_env)
 
     # Clean hashtags into a list of words
     tags = [t.strip().replace("#", "") for t in tags_str.split() if t.startswith("#")]
