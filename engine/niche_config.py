@@ -44,7 +44,7 @@ NICHES = {
             "💛 Is series ka next part chahiye ho to comment mein 'Radhe Radhe' likho."
         ],
         "post_pinned_comment": True,
-        "blacklist": ["vlog", "podcast", "interview", "talking", "narrated", "reaction", "review", "story", "fact"],
+        "blacklist": ["face", "facecam", "selfie", "man talking", "woman talking", "person talking", "front camera"],
         "ai_prompt": "You are an expert Hindu devotional YouTube Shorts strategist. Create highly clickable Hindi metadata that matches the exact source video topic, uses emotionally strong but believable hooks, and is optimized for watch time, curiosity, CTR, and repeat views.",
         "fallbacks": [
             {"title": "आज ये देख लो! भगवान का चमत्कार 😱🙏 #Shorts", "description": "🙏 जय श्री राम! भगवान की कृपा आप पर सदा बनी रहे।"},
@@ -102,7 +102,7 @@ NICHES = {
             "Drop 'MORE' if you want the next hidden fact."
         ],
         "post_pinned_comment": True,
-        "blacklist": ["vlog", "podcast", "interview", "talking", "narrated", "vlogger", "setup", "tutorial", "face", "my story"],
+        "blacklist": ["face", "facecam", "selfie", "man talking", "woman talking", "person talking", "front camera"],
         "ai_prompt": "You are the creator of AKONYMOUS, a research-driven YouTube Shorts channel. Create highly clickable English metadata that matches the exact source video topic, sounds intelligent and mysterious, and is optimized for CTR, retention, and shares without sounding generic.",
         "fallbacks": [
             {"title": "The world isn't what you think... 🕵️‍♂️ #AKONYMOUS", "description": "Think deeper. Question everything. Decode reality.\n\n#Mystery #Facts #Truth"},

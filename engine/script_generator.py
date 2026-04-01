@@ -68,7 +68,6 @@ def _build_fallback_tags(original_title, niche):
 
 def _clean_title(title):
     title = re.sub(r"\s+", " ", (title or "").strip())
-    title = re.sub(r"(#\w+\s*)+$", "", title).strip()
     return title[:80].rstrip(" -|,")
 
 
@@ -81,10 +80,16 @@ def _clean_tags(tags, original_title, niche):
             continue
         if normalized not in cleaned:
             cleaned.append(normalized)
+    fallback_tags = _build_fallback_tags(original_title, niche).split()
     if not cleaned:
-        return _build_fallback_tags(original_title, niche)
+        return " ".join(fallback_tags[:8])
     if "#shorts" not in cleaned:
         cleaned.insert(0, "#shorts")
+    for fallback_tag in fallback_tags:
+        if fallback_tag not in cleaned:
+            cleaned.append(fallback_tag)
+        if len(cleaned) >= 8:
+            break
     return " ".join(cleaned[:8])
 
 
@@ -96,7 +101,9 @@ def _score_title(title, original_title):
     score += 10 if 35 <= len(title) <= 75 else 0
     score += 4 if any(char.isdigit() for char in title) else 0
     score += 5 if any(token in title_l for token in ["?", "why", "how", "secret", "truth", "real", "hidden", "shocking"]) else 0
-    score -= 8 if "#" in title else 0
+    hashtag_count = len(re.findall(r"#\w+", title))
+    score += 6 if 1 <= hashtag_count <= 2 else 0
+    score -= 6 if hashtag_count > 2 else 0
     return score
 
 
@@ -138,8 +145,8 @@ def _build_prompt(original_title, config, engagement_hook, series_label):
         f"Recurring series identity to preserve: {series_label}\n\n"
         "Rules:\n"
         "1. Metadata must match the exact source topic, not generic channel themes.\n"
-        "2. Title must be ultra-clickable, emotionally strong, curiosity-driven, and under 80 characters.\n"
-        "3. Description must feel native to the topic, add intrigue/value, and support retention.\n"
+        "2. Title must be ultra-clickable, emotionally strong, curiosity-driven, under 80 characters, and include 1 or 2 relevant hashtags.\n"
+        "3. Description must feel native to the topic, add intrigue/value, support retention, and end with 3 to 5 relevant hashtags.\n"
         "4. Tags must be high-intent YouTube Shorts hashtags directly relevant to the source topic.\n"
         "5. Avoid generic filler, keyword stuffing, or misleading claims.\n\n"
         "Please provide the response in this EXACT format:\n"
@@ -150,6 +157,38 @@ def _build_prompt(original_title, config, engagement_hook, series_label):
         "TAGS: [The Tags]\n"
         "COMMENT: [Pinned comment text]"
     )
+
+
+def _split_tag_list(tags_str):
+    return [tag for tag in (tags_str or "").split() if tag.startswith("#")]
+
+
+def _enforce_title_hashtags(title, tags_str):
+    cleaned = _clean_title(title)
+    existing = re.findall(r"#\w+", cleaned)
+    if 1 <= len(existing) <= 2:
+        return cleaned
+
+    base_title = re.sub(r"\s*#\w+\b", "", cleaned).strip()
+    candidate_tags = [tag for tag in _split_tag_list(tags_str) if tag.lower() != "#shorts"]
+    chosen = candidate_tags[:2] if candidate_tags else ["#shorts"]
+    final_title = f"{base_title} {' '.join(chosen[:2])}".strip()
+    return final_title[:80].rstrip(" -|,")
+
+
+def _enforce_description_hashtags(description, tags_str, engagement_hook, series_label):
+    description = re.sub(r"\n{3,}", "\n\n", (description or "").strip())
+    tag_list = [tag for tag in _split_tag_list(tags_str) if tag.lower() != "#shorts"][:4]
+    if not tag_list:
+        tag_list = ["#shorts"]
+
+    if engagement_hook and engagement_hook not in description:
+        description = f"{description}\n\n{engagement_hook}".strip()
+    if series_label and f"Series: {series_label}" not in description:
+        description = f"{description}\nSeries: {series_label}".strip()
+
+    description_no_tags = re.sub(r"(?:\n|\s)*(#\w+\s*)+$", "", description).strip()
+    return f"{description_no_tags}\n\n{' '.join(tag_list)}".strip()
 
 
 def _generate_with_groq(prompt, niche):
@@ -249,10 +288,12 @@ def generate_rewrite_and_quote(original_title, config):
         if attempt == 0:
             print("  [INFO] Metadata reroll triggered because title score was weak.")
 
+    cleaned_tags = _clean_tags(tags, original_title, niche)
+
     return {
-        "title": _clean_title(title),
-        "tags": _clean_tags(tags, original_title, niche),
-        "description": description,
+        "title": _enforce_title_hashtags(title, cleaned_tags),
+        "tags": cleaned_tags,
+        "description": _enforce_description_hashtags(description, cleaned_tags, engagement_hook, series_label),
         "comment": comment,
         "series_label": series_label,
     }

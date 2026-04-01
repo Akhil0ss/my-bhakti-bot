@@ -81,6 +81,43 @@ def _sample_visual_quality(filepath):
         }
 
 
+def _human_presence_risk(filepath):
+    try:
+        with VideoFileClip(filepath) as clip:
+            duration = max(clip.duration or 0, 0.1)
+            sample_points = sorted(set([
+                0.4,
+                min(1.2, duration - 0.01),
+                min(duration / 2, duration - 0.01),
+            ]))
+            frames = [clip.get_frame(t).astype(np.float32) for t in sample_points]
+
+        risks = []
+        for frame in frames:
+            if frame.ndim != 3 or frame.shape[2] < 3:
+                continue
+            r = frame[:, :, 0]
+            g = frame[:, :, 1]
+            b = frame[:, :, 2]
+            skin_mask = (
+                (r > 95) & (g > 40) & (b > 20) &
+                ((np.maximum.reduce([r, g, b]) - np.minimum.reduce([r, g, b])) > 15) &
+                (np.abs(r - g) > 15) & (r > g) & (r > b)
+            )
+            h, w = skin_mask.shape
+            center = skin_mask[h // 4: (3 * h) // 4, w // 4: (3 * w) // 4]
+            frame_skin_ratio = float(np.mean(skin_mask))
+            center_skin_ratio = float(np.mean(center)) if center.size else 0.0
+            risks.append((frame_skin_ratio, center_skin_ratio))
+
+        if not risks:
+            return 0.0
+        return max((skin * 0.8) + (center * 1.6) for skin, center in risks)
+    except Exception as e:
+        print(f"  [WARN] Human-presence heuristic failed: {e}")
+        return 0.0
+
+
 def _extract_terms(text):
     return {
         word for word in re.findall(r"[a-z0-9']+", (text or "").lower())
@@ -302,6 +339,16 @@ def download_media(config, output_dir="output", cookies_path=None):
                             "  [INFO] Low-motion opener detected but accepted because other quality checks passed "
                             f"(score={quality['quality_score']:.1f}, hook_motion={quality['first_hook_motion']:.1f})."
                         )
+
+                    human_risk = _human_presence_risk(filepath)
+                    if human_risk > 0.22:
+                        print(
+                            "  [WARN] Rejected downloaded file because it looks like face-led / human-present content "
+                            f"(risk={human_risk:.2f})."
+                        )
+                        if os.path.exists(filepath):
+                            os.remove(filepath)
+                        continue
 
                     save_history(v_id, history_file)
                     return {
