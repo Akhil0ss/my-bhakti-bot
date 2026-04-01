@@ -8,7 +8,10 @@ from google.auth.exceptions import RefreshError
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
-SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+SCOPES = [
+    "https://www.googleapis.com/auth/youtube.upload",
+    "https://www.googleapis.com/auth/youtube.force-ssl",
+]
 TOKEN_FILE = "token.json"
 CLIENT_SECRET_FILE = "client_secret.json"
 
@@ -70,9 +73,9 @@ def get_authenticated_service(token_file="token.json", token_secret_env=None):
             
     return build("youtube", "v3", credentials=creds)
 
-def post_pinned_comment(youtube, video_id):
+def post_pinned_comment(youtube, video_id, comment_text=None):
     """Posts and pins an engagement-boosting comment on the uploaded video."""
-    comment_text = random.choice(PIN_COMMENTS)
+    comment_text = comment_text or random.choice(PIN_COMMENTS)
     try:
         # Post comment
         comment_response = youtube.commentThreads().insert(
@@ -96,7 +99,19 @@ def post_pinned_comment(youtube, video_id):
         print(f"  [WARN] Comment failed (not critical): {e}")
         return None
 
-def upload_video(video_path, title, description, tags_str, token_file="token.json", token_secret_env=None, category_id="22"):
+def upload_video(
+    video_path,
+    title,
+    description,
+    tags_str,
+    token_file="token.json",
+    token_secret_env=None,
+    category_id="22",
+    default_language="hi",
+    default_audio_language="hi",
+    pinned_comment_text=None,
+    enable_pinned_comment=False,
+):
     """Uploads a video to YouTube using a specific token file."""
     youtube = get_authenticated_service(token_file=token_file, token_secret_env=token_secret_env)
 
@@ -109,8 +124,8 @@ def upload_video(video_path, title, description, tags_str, token_file="token.jso
             "description": description[:5000],
             "tags": tags[:15],
             "categoryId": category_id,
-            "defaultLanguage": "hi",       # Hindi content
-            "defaultAudioLanguage": "hi",   # Hindi audio
+            "defaultLanguage": default_language,
+            "defaultAudioLanguage": default_audio_language,
         },
         "status": {
             "privacyStatus": "public",
@@ -138,9 +153,8 @@ def upload_video(video_path, title, description, tags_str, token_file="token.jso
         video_id = response.get("id", "unknown")
         video_url = f"https://youtube.com/shorts/{video_id}"
         print(f"  [OK] Successfully uploaded! Link: {video_url}")
-        
-        # (Comment pinning needs extra scopes, skipping for stability)
-        # post_pinned_comment(youtube, video_id)
+        if enable_pinned_comment:
+            post_pinned_comment(youtube, video_id, comment_text=pinned_comment_text)
         
         return video_id
         

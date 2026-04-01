@@ -6,7 +6,10 @@ from datetime import datetime, timedelta, timezone
 import urllib.parse
 import urllib.request
 
-SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+SCOPES = [
+    "https://www.googleapis.com/auth/youtube.upload",
+    "https://www.googleapis.com/auth/youtube.force-ssl",
+]
 CLIENT_SECRET_FILE = "client_secret.json"
 TOKEN_FILENAME = "token_akonymous.json"
 

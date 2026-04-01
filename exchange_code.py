@@ -3,7 +3,10 @@ import json
 from google_auth_oauthlib.flow import InstalledAppFlow
 
 # Current auth configuration
-SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+SCOPES = [
+    "https://www.googleapis.com/auth/youtube.upload",
+    "https://www.googleapis.com/auth/youtube.force-ssl",
+]
 CLIENT_SECRET_FILE = "client_secret.json"
 REDIRECT_URI = "http://localhost"
 

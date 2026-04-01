@@ -1,5 +1,6 @@
 import os
 import random
+import re
 import requests
 import google.generativeai as genai
 from dotenv import load_dotenv
@@ -23,29 +24,131 @@ HOOKS = {
 }
 
 
-def _parse_ai_output(output, title, description, tags):
+def _pick_series_format(config, original_title):
+    options = config.get("series_formats", [])
+    if not options:
+        return ""
+    keywords = _extract_keywords(original_title, limit=2)
+    if not keywords:
+        return random.choice(options)
+    return options[sum(len(word) for word in keywords) % len(options)]
+
+
+def _extract_keywords(text, limit=5):
+    words = re.findall(r"[A-Za-z0-9']+", text.lower())
+    blocked = {
+        "the", "and", "for", "with", "that", "this", "from", "into", "your", "you",
+        "what", "when", "where", "they", "them", "about", "video", "shorts", "short",
+        "viral", "status", "facts", "fact", "truth", "hindi", "english"
+    }
+    seen = []
+    for word in words:
+        if len(word) < 4 or word in blocked or word in seen:
+            continue
+        seen.append(word)
+        if len(seen) == limit:
+            break
+    return seen
+
+
+def _build_fallback_tags(original_title, niche):
+    keywords = _extract_keywords(original_title, limit=4)
+    base = ["#shorts"]
+    if niche == "bhakti":
+        base.extend(["#bhakti", "#sanatan", "#devotional"])
+    else:
+        base.extend(["#mystery", "#facts", "#truth"])
+    base.extend(f"#{word}" for word in keywords)
+    deduped = []
+    for tag in base:
+        if tag.lower() not in [existing.lower() for existing in deduped]:
+            deduped.append(tag)
+    return " ".join(deduped[:8])
+
+
+def _clean_title(title):
+    title = re.sub(r"\s+", " ", (title or "").strip())
+    title = re.sub(r"(#\w+\s*)+$", "", title).strip()
+    return title[:80].rstrip(" -|,")
+
+
+def _clean_tags(tags, original_title, niche):
+    raw_tags = re.findall(r"#?[A-Za-z0-9_]+", tags or "")
+    cleaned = []
+    for tag in raw_tags:
+        normalized = "#" + tag.lstrip("#").lower()
+        if len(normalized) <= 2:
+            continue
+        if normalized not in cleaned:
+            cleaned.append(normalized)
+    if not cleaned:
+        return _build_fallback_tags(original_title, niche)
+    if "#shorts" not in cleaned:
+        cleaned.insert(0, "#shorts")
+    return " ".join(cleaned[:8])
+
+
+def _score_title(title, original_title):
+    title_l = (title or "").lower()
+    source_words = set(_extract_keywords(original_title, limit=6))
+    overlap = sum(1 for word in source_words if word in title_l)
+    score = overlap * 8
+    score += 10 if 35 <= len(title) <= 75 else 0
+    score += 4 if any(char.isdigit() for char in title) else 0
+    score += 5 if any(token in title_l for token in ["?", "why", "how", "secret", "truth", "real", "hidden", "shocking"]) else 0
+    score -= 8 if "#" in title else 0
+    return score
+
+
+def _pick_best_title(candidates, fallback_title, original_title):
+    options = [title.strip() for title in candidates if title and title.strip()]
+    if not options:
+        return fallback_title
+    return max(options, key=lambda title: _score_title(_clean_title(title), original_title))
+
+
+def _is_weak_title(title, original_title):
+    return _score_title(_clean_title(title), original_title) < 18
+
+
+def _parse_ai_output(output, title, description, tags, comment):
+    title_candidates = []
     for line in output.split("\n"):
         line_up = line.upper()
-        if line_up.startswith("TITLE:"):
-            title = line.split(":", 1)[1].strip()
+        if line_up.startswith("TITLE_") or line_up.startswith("TITLE "):
+            title_candidates.append(line.split(":", 1)[1].strip())
+        elif line_up.startswith("TITLE:"):
+            title_candidates.append(line.split(":", 1)[1].strip())
         elif line_up.startswith("TAGS:"):
             tags = line.split(":", 1)[1].strip()
         elif line_up.startswith("DESCRIPTION:"):
             parts = output.split("DESCRIPTION:", 1)
             if len(parts) > 1:
-                description = parts[1].split("TAGS:")[0].strip()
-    return title, description, tags
+                description = parts[1].split("TAGS:")[0].split("COMMENT:")[0].strip()
+        elif line_up.startswith("COMMENT:"):
+            comment = line.split(":", 1)[1].strip()
+    return title_candidates or [title], description, tags, comment
 
 
-def _build_prompt(original_title, config, engagement_hook):
+def _build_prompt(original_title, config, engagement_hook, series_label):
     return (
         f"{config.get('ai_prompt', '')}\n\n"
-        f"Original video title: {original_title}\n"
-        f"Engagement Hook to include: {engagement_hook}\n\n"
+        f"Original source video title/topic: {original_title}\n"
+        f"Engagement Hook to include naturally: {engagement_hook}\n\n"
+        f"Recurring series identity to preserve: {series_label}\n\n"
+        "Rules:\n"
+        "1. Metadata must match the exact source topic, not generic channel themes.\n"
+        "2. Title must be ultra-clickable, emotionally strong, curiosity-driven, and under 80 characters.\n"
+        "3. Description must feel native to the topic, add intrigue/value, and support retention.\n"
+        "4. Tags must be high-intent YouTube Shorts hashtags directly relevant to the source topic.\n"
+        "5. Avoid generic filler, keyword stuffing, or misleading claims.\n\n"
         "Please provide the response in this EXACT format:\n"
-        "TITLE: [The Title]\n"
+        "TITLE_1: [Best option]\n"
+        "TITLE_2: [Alternative option]\n"
+        "TITLE_3: [Alternative option]\n"
         "DESCRIPTION: [The Description]\n"
-        "TAGS: [The Tags]"
+        "TAGS: [The Tags]\n"
+        "COMMENT: [Pinned comment text]"
     )
 
 
@@ -97,43 +200,61 @@ def generate_rewrite_and_quote(original_title, config):
     niche = "akonymous" if "akonymous" in hist_file.lower() else "bhakti"
     
     engagement_hook = random.choice(HOOKS.get(niche, HOOKS["bhakti"]))
+    series_label = _pick_series_format(config, original_title)
+    comment_templates = config.get("comment_templates", [])
     
     # Defaults from niche config fallbacks
     fallbacks = config.get("fallbacks", [])
     fallback = random.choice(fallbacks) if fallbacks else {"title": "Viral Video", "description": "Check this out!"}
     
     title = fallback["title"]
-    description = f"{fallback['description']}\n\n{engagement_hook}\n\n#Viral #Trending #Shorts"
-    tags = "#viral #trending #shorts"
-    prompt = _build_prompt(original_title, config, engagement_hook)
+    description = f"{fallback['description']}\n\nSeries: {series_label}\n\n{engagement_hook}" if series_label else f"{fallback['description']}\n\n{engagement_hook}"
+    tags = _build_fallback_tags(original_title, niche)
+    comment = random.choice(comment_templates) if comment_templates else engagement_hook
+    prompt = _build_prompt(original_title, config, engagement_hook, series_label)
 
-    try:
-        output = _generate_with_groq(prompt, niche)
-        if output:
-            title, description, tags = _parse_ai_output(output, title, description, tags)
-    except Exception as e:
-        print(f"  [WARN] Groq failed: {e}")
+    for attempt in range(2):
+        output = None
         try:
-            output = _generate_with_gemini(prompt, niche)
+            output = _generate_with_groq(prompt, niche)
             if output:
-                title, description, tags = _parse_ai_output(output, title, description, tags)
-        except Exception as gemini_error:
-            print(f"  [WARN] Gemini failed: {gemini_error}. Using fallbacks.")
-    else:
-        if not output:
+                title_candidates, description, tags, comment = _parse_ai_output(output, title, description, tags, comment)
+                title = _pick_best_title(title_candidates, title, original_title)
+        except Exception as e:
+            print(f"  [WARN] Groq failed: {e}")
             try:
                 output = _generate_with_gemini(prompt, niche)
                 if output:
-                    title, description, tags = _parse_ai_output(output, title, description, tags)
-                else:
-                    print("  [WARN] No Groq/Gemini API key found. Using fallbacks.")
+                    title_candidates, description, tags, comment = _parse_ai_output(output, title, description, tags, comment)
+                    title = _pick_best_title(title_candidates, title, original_title)
             except Exception as gemini_error:
                 print(f"  [WARN] Gemini failed: {gemini_error}. Using fallbacks.")
+                break
+        else:
+            if not output:
+                try:
+                    output = _generate_with_gemini(prompt, niche)
+                    if output:
+                        title_candidates, description, tags, comment = _parse_ai_output(output, title, description, tags, comment)
+                        title = _pick_best_title(title_candidates, title, original_title)
+                    else:
+                        print("  [WARN] No Groq/Gemini API key found. Using fallbacks.")
+                        break
+                except Exception as gemini_error:
+                    print(f"  [WARN] Gemini failed: {gemini_error}. Using fallbacks.")
+                    break
+
+        if not _is_weak_title(title, original_title):
+            break
+        if attempt == 0:
+            print("  [INFO] Metadata reroll triggered because title score was weak.")
 
     return {
-        "title": title,
-        "tags": tags,
-        "description": description
+        "title": _clean_title(title),
+        "tags": _clean_tags(tags, original_title, niche),
+        "description": description,
+        "comment": comment,
+        "series_label": series_label,
     }
 
 if __name__ == "__main__":

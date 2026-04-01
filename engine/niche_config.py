@@ -14,10 +14,38 @@ NICHES = {
             "Vedic Stories Cinematic AI",
             "Spiritual Soul Meditation AI"
         ],
+        "trending_keywords": [
+            "hanuman bhakti status viral",
+            "mahadev status trending",
+            "krishna bhajan shorts viral",
+            "jai shree ram shorts trending",
+            "sanatan dharma reels viral",
+            "bholenath edit trending",
+            "radhe radhe shorts viral",
+            "hindu devotional shorts trending"
+        ],
         "min_likes": 1000,
         "min_views": 10000,
+        "min_duration": 30,
+        "max_duration": 60,
+        "min_topic_score": 2,
+        "preferred_hours_ist": [7, 18, 21],
+        "default_language": "hi",
+        "default_audio_language": "hi",
+        "series_formats": [
+            "Aaj Ka Bhakti Rahasya",
+            "Divine Signal",
+            "Sanatan Truth",
+            "Bhakti Power Short"
+        ],
+        "comment_templates": [
+            "🙏 Agar bhakti mehsoos hui ho to comment mein 'Jai Shri Ram' likho.",
+            "🔱 Agar aise aur divine shorts chahiye to comment mein 'Har Har Mahadev' likho.",
+            "💛 Is series ka next part chahiye ho to comment mein 'Radhe Radhe' likho."
+        ],
+        "post_pinned_comment": True,
         "blacklist": ["vlog", "podcast", "interview", "talking", "narrated", "reaction", "review", "story", "fact"],
-        "ai_prompt": "You are an expert Hindu Devotional YouTube Shorts content strategist. Create MAXIMUM VIRAL YouTube Shorts metadata in Hindi.",
+        "ai_prompt": "You are an expert Hindu devotional YouTube Shorts strategist. Create highly clickable Hindi metadata that matches the exact source video topic, uses emotionally strong but believable hooks, and is optimized for watch time, curiosity, CTR, and repeat views.",
         "fallbacks": [
             {"title": "आज ये देख लो! भगवान का चमत्कार 😱🙏 #Shorts", "description": "🙏 जय श्री राम! भगवान की कृपा आप पर सदा बनी रहे।"},
             {"title": "⚠️ ये गलती कभी मत करना! महादेव देख रहे हैं 🔱 #Shorts", "description": "🔱 हर हर महादेव! शिव जी के इस रहस्य को जानिए।"},
@@ -44,10 +72,38 @@ NICHES = {
             "Digital simulation theory 4K AI",
             "Quantum physics mysteries cinematic"
         ],
+        "trending_keywords": [
+            "parallel universe theory viral",
+            "simulation theory shorts trending",
+            "dark psychology facts viral",
+            "ancient civilization mystery trending",
+            "hidden history facts viral",
+            "forbidden archaeology trending",
+            "space mystery shorts viral",
+            "quantum physics mystery trending"
+        ],
         "min_likes": 1500,
         "min_views": 15000,
+        "min_duration": 30,
+        "max_duration": 60,
+        "min_topic_score": 2,
+        "preferred_hours_ist": [15, 19, 22],
+        "default_language": "en",
+        "default_audio_language": "en",
+        "series_formats": [
+            "AKONYMOUS Decode",
+            "Hidden Pattern",
+            "Signal Drop",
+            "Reality Glitch"
+        ],
+        "comment_templates": [
+            "Comment 'TRUTH' if you want part 2.",
+            "If this made you think, comment 'DECODED'.",
+            "Drop 'MORE' if you want the next hidden fact."
+        ],
+        "post_pinned_comment": True,
         "blacklist": ["vlog", "podcast", "interview", "talking", "narrated", "vlogger", "setup", "tutorial", "face", "my story"],
-        "ai_prompt": "You are the creator of AKONYMOUS, a research-driven channel for deep analysis and hidden facts. Create MYSTERIOUS, LOGICAL, and BRAIN-PICKING YouTube Shorts metadata in English.",
+        "ai_prompt": "You are the creator of AKONYMOUS, a research-driven YouTube Shorts channel. Create highly clickable English metadata that matches the exact source video topic, sounds intelligent and mysterious, and is optimized for CTR, retention, and shares without sounding generic.",
         "fallbacks": [
             {"title": "The world isn't what you think... 🕵️‍♂️ #AKONYMOUS", "description": "Think deeper. Question everything. Decode reality.\n\n#Mystery #Facts #Truth"},
             {"title": "5 Suppressed Facts the world ignores ⚠️ #Shorts", "description": "Mainstream narratives are built on assumptions. Here is the data.\n\n#Data #Logic #HiddenTruth"},

@@ -30,7 +30,9 @@ jobs:
       - name: Restore Cache
         uses: actions/cache/restore@v4
         with:
-          path: download_history_akonymous.txt
+          path: |
+            download_history_akonymous.txt
+            strategy_data
           key: history-akonymous-${{ github.run_id }}
           restore-keys: history-akonymous-
       - name: Run Akonymous Engine
@@ -39,5 +41,7 @@ jobs:
         if: always()
         uses: actions/cache/save@v4
         with:
-          path: download_history_akonymous.txt
+          path: |
+            download_history_akonymous.txt
+            strategy_data
           key: history-akonymous-${{ github.run_id }}
