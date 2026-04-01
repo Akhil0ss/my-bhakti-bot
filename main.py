@@ -41,8 +41,8 @@ def run(niche_name, no_upload=False, cookies_path=None):
     print(f"[1/4] Scraping viral {niche_name} clip...")
     scraped_data = download_media(config=config, output_dir=OUTPUT_DIR, cookies_path=cookies_path)
     if not scraped_data or not scraped_data.get("filepath"):
-        print(f"  [FATAL] Failed to scrape {niche_name} video. Exiting.")
-        sys.exit(1)
+        print(f"  [SKIP] No usable {niche_name} video found in this run. Exiting without failure.")
+        return
         
     raw_video = scraped_data["filepath"]
     original_title = scraped_data["original_title"]
@@ -61,8 +61,8 @@ def run(niche_name, no_upload=False, cookies_path=None):
     )
 
     if not final_video:
-        print("  [FATAL] Rendering failed. Exiting.")
-        sys.exit(1)
+        print("  [SKIP] Rendering failed for this run. Exiting without failure.")
+        return
 
     # Step 4: Upload and Cleanup
     print("\n[4/4] Uploading to YouTube Shorts & Cleaning Up...")
