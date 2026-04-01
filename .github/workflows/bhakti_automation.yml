@@ -4,8 +4,6 @@ on:
     - cron: '30 1 * * *'    # 07:00 AM IST
     - cron: '30 12 * * *'   # 06:00 PM IST
     - cron: '30 15 * * *'   # 09:00 PM IST
-  push:
-    branches: [main]
   workflow_dispatch: {}
 jobs:
   upload-bhakti:

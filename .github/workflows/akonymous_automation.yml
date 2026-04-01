@@ -4,8 +4,6 @@ on:
     - cron: '30 9 * * *'     # 03:00 PM IST
     - cron: '30 13 * * *'    # 07:00 PM IST
     - cron: '30 16 * * *'    # 10:00 PM IST
-  push:
-    branches: [main]
   workflow_dispatch: {}
 jobs:
   upload-akonymous:
