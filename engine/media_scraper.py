@@ -1,6 +1,7 @@
 import os
 import random
 import re
+from datetime import datetime, timedelta, timezone
 import requests
 import numpy as np
 from moviepy import VideoFileClip
@@ -125,10 +126,15 @@ def _extract_terms(text):
     }
 
 
+def _normalize_query(text):
+    return re.sub(r"\s+", " ", (text or "").strip())
+
+
 def _build_search_pool(config, feedback_terms):
     base_queries = config.get("trending_keywords") or config.get("keywords", [])
     fallback_queries = config.get("keywords", [])
     series_formats = config.get("series_formats", [])
+    query_modifiers = config.get("query_modifiers", [])
     feedback_seed = " ".join(feedback_terms[:3]) if feedback_terms else ""
 
     pool = list(dict.fromkeys(base_queries + fallback_queries))
@@ -143,7 +149,39 @@ def _build_search_pool(config, feedback_terms):
             for query in base_queries[:3]
             for series in series_formats[:2]
         )
-    return list(dict.fromkeys(pool))
+    if query_modifiers:
+        pool.extend(
+            _normalize_query(f"{query} {modifier}")
+            for query in (base_queries[:16] + fallback_queries[:32])
+            for modifier in query_modifiers
+        )
+    if feedback_terms:
+        pool.extend(
+            _normalize_query(f"{query} {' '.join(feedback_terms[:2])}")
+            for query in fallback_queries[:24]
+        )
+    return list(dict.fromkeys(query for query in pool if _normalize_query(query)))
+
+
+def _extract_publish_timestamp(video):
+    for field in ["create_time", "createTime", "create_time_ms", "createTimeMS", "timestamp"]:
+        numeric = _to_float(video.get(field), default=0)
+        if numeric <= 0:
+            continue
+        if numeric > 10_000_000_000:
+            numeric /= 1000.0
+        try:
+            return datetime.fromtimestamp(numeric, tz=timezone.utc)
+        except (OverflowError, OSError, ValueError):
+            continue
+    return None
+
+
+def _within_recent_window(video, max_age_days):
+    published_at = _extract_publish_timestamp(video)
+    if not published_at:
+        return False, None
+    return (datetime.now(timezone.utc) - published_at) <= timedelta(days=max_age_days), published_at
 
 
 def _score_video(video, keyword, config, feedback_terms, fatigue_terms):
@@ -164,6 +202,11 @@ def _score_video(video, keyword, config, feedback_terms, fatigue_terms):
     trend_overlap = len(trend_terms & title_terms)
     feedback_overlap = len(set(feedback_terms) & title_terms)
     fatigue_overlap = len(set(fatigue_terms) & title_terms)
+    recent_ok, published_at = _within_recent_window(video, config.get("max_age_days", 30))
+    recency_bonus = 0.0
+    if recent_ok and published_at:
+        age_hours = max((datetime.now(timezone.utc) - published_at).total_seconds() / 3600.0, 1.0)
+        recency_bonus = max(0.0, 2500 - (age_hours * 3.0))
 
     return (
         (likes * 1.0)
@@ -174,6 +217,7 @@ def _score_video(video, keyword, config, feedback_terms, fatigue_terms):
         + (overlap * 4000)
         + (trend_overlap * 2000)
         + (feedback_overlap * 2500)
+        + recency_bonus
         - (fatigue_overlap * 2200)
     ), overlap + trend_overlap + feedback_overlap
 
@@ -213,8 +257,11 @@ def _select_candidate_from_keyword(
         duration = _to_float(v.get("duration"), default=0)
         width = int(_to_float(v.get("width"), default=0))
         height = int(_to_float(v.get("height"), default=0))
+        is_recent, published_at = _within_recent_window(v, config.get("max_age_days", 30))
 
         if not v_id or v_id in history:
+            continue
+        if not is_recent:
             continue
         if any(word in title for word in blacklist):
             continue
@@ -228,7 +275,7 @@ def _select_candidate_from_keyword(
         score, topic_score = _score_video(v, keyword, config, feedback_terms, fatigue_terms)
         if topic_score < min_topic_score:
             continue
-        candidates.append((score, topic_score, v, duration, likes, views))
+        candidates.append((score, topic_score, v, duration, likes, views, published_at))
 
     if not candidates:
         return None
@@ -251,6 +298,7 @@ def download_media(config, output_dir="output", cookies_path=None):
     if not search_pool:
         print("  [ERROR] No keywords found in niche config.")
         return None
+    print(f"  [INFO] Search pool prepared with {len(search_pool)} queries and a {config.get('max_age_days', 30)}-day recency filter.")
         
     try:
         threshold_profiles = [
@@ -270,7 +318,8 @@ def download_media(config, output_dir="output", cookies_path=None):
                 "min_topic_score": 1,
             },
         ]
-        keywords_to_try = random.sample(search_pool, min(len(search_pool), 8))
+        random.shuffle(search_pool)
+        keywords_to_try = search_pool[: min(len(search_pool), config.get("max_queries_per_run", 80))]
         min_duration = config.get("min_duration", 30)
         max_duration = config.get("max_duration", 60)
 
@@ -296,7 +345,7 @@ def download_media(config, output_dir="output", cookies_path=None):
                 if not candidates:
                     continue
 
-                for score, topic_score, v, duration, likes, views in candidates[:8]:
+                for score, topic_score, v, duration, likes, views, published_at in candidates[:8]:
                     play_url = v.get("play")
                     v_id = v.get("video_id") or v.get("id")
                     if not play_url:
@@ -304,7 +353,8 @@ def download_media(config, output_dir="output", cookies_path=None):
 
                     print(
                         f"  [OK] Selected top-scoring vertical trend video: {v_id} "
-                        f"(Score: {int(score)}, Topic: {topic_score}, Likes: {likes}, Views: {views}, Duration: {duration or 'unknown'}s)"
+                        f"(Score: {int(score)}, Topic: {topic_score}, Likes: {likes}, Views: {views}, "
+                        f"Duration: {duration or 'unknown'}s, Published: {published_at.strftime('%Y-%m-%d') if published_at else 'unknown'})"
                     )
                     video_content = requests.get(play_url, timeout=40).content
                     filepath = os.path.join(output_dir, "raw_video.mp4")
