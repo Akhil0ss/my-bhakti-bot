@@ -107,6 +107,7 @@ def run(niche_name, no_upload=False, cookies_path=None):
             cookies_path=cookies_path,
             min_duration_override=config.get("queue_min_source_duration", 70),
             max_duration_override=None,
+            query_limit_override=config.get("queue_search_queries", 24),
         )
     if not scraped_data or not scraped_data.get("filepath"):
         scraped_data = download_media(config=config, output_dir=OUTPUT_DIR, cookies_path=cookies_path)

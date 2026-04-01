@@ -236,8 +236,15 @@ def _select_candidate_from_keyword(
     min_topic_score,
 ):
     print(f'  [TIKWM] Searching for "{keyword}"...')
-    search_api = f"https://www.tikwm.com/api/feed/search?keywords={keyword}&count=20"
-    response = requests.get(search_api, timeout=15).json()
+    try:
+        response = requests.get(
+            "https://www.tikwm.com/api/feed/search",
+            params={"keywords": keyword, "count": 20},
+            timeout=config.get("search_timeout_seconds", 25),
+        ).json()
+    except requests.RequestException as e:
+        print(f'  [WARN] Search request failed for "{keyword}": {e}')
+        return None
 
     if response.get("code") != 0 or not response.get("data"):
         return None
@@ -285,7 +292,14 @@ def _select_candidate_from_keyword(
     return candidates
 
 
-def download_media(config, output_dir="output", cookies_path=None, min_duration_override=None, max_duration_override=None):
+def download_media(
+    config,
+    output_dir="output",
+    cookies_path=None,
+    min_duration_override=None,
+    max_duration_override=None,
+    query_limit_override=None,
+):
     """AI-First TikTok strategy using niche-specific configuration."""
     os.makedirs(output_dir, exist_ok=True)
     history_file = config.get("history_file", "downloaded.txt")
@@ -301,119 +315,120 @@ def download_media(config, output_dir="output", cookies_path=None, min_duration_
         return None
     print(f"  [INFO] Search pool prepared with {len(search_pool)} queries and a {config.get('max_age_days', 30)}-day recency filter.")
         
-    try:
-        threshold_profiles = [
-            {
-                "min_likes": config.get("min_likes", 500),
-                "min_views": config.get("min_views", 5000),
-                "min_topic_score": config.get("min_topic_score", 1),
-            },
-            {
-                "min_likes": max(500, int(config.get("min_likes", 500) * 0.6)),
-                "min_views": max(5000, int(config.get("min_views", 5000) * 0.6)),
-                "min_topic_score": max(1, config.get("min_topic_score", 1) - 1),
-            },
-            {
-                "min_likes": 200,
-                "min_views": 2000,
-                "min_topic_score": 1,
-            },
-        ]
-        random.shuffle(search_pool)
-        keywords_to_try = search_pool[: min(len(search_pool), config.get("max_queries_per_run", 80))]
-        min_duration = min_duration_override if min_duration_override is not None else config.get("min_duration", 30)
-        max_duration = max_duration_override if max_duration_override is not None else config.get("max_duration", 60)
+    threshold_profiles = [
+        {
+            "min_likes": config.get("min_likes", 500),
+            "min_views": config.get("min_views", 5000),
+            "min_topic_score": config.get("min_topic_score", 1),
+        },
+        {
+            "min_likes": max(500, int(config.get("min_likes", 500) * 0.6)),
+            "min_views": max(5000, int(config.get("min_views", 5000) * 0.6)),
+            "min_topic_score": max(1, config.get("min_topic_score", 1) - 1),
+        },
+        {
+            "min_likes": 200,
+            "min_views": 2000,
+            "min_topic_score": 1,
+        },
+    ]
+    random.shuffle(search_pool)
+    keywords_to_try = search_pool[: min(len(search_pool), query_limit_override or config.get("max_queries_per_run", 80))]
+    min_duration = min_duration_override if min_duration_override is not None else config.get("min_duration", 30)
+    max_duration = max_duration_override if max_duration_override is not None else config.get("max_duration", 60)
 
-        for idx, profile in enumerate(threshold_profiles, start=1):
-            if idx > 1:
-                print(
-                    f"  [INFO] Broadening search (pass {idx}) "
-                    f"likes>={profile['min_likes']} views>={profile['min_views']} topic>={profile['min_topic_score']}"
-                )
-            for keyword in keywords_to_try:
-                candidates = _select_candidate_from_keyword(
-                    keyword=keyword,
-                    config=config,
-                    history=history,
-                    feedback_terms=feedback_terms,
-                    fatigue_terms=fatigue_terms,
-                    min_likes=profile["min_likes"],
-                    min_views=profile["min_views"],
-                    min_duration=min_duration,
-                    max_duration=max_duration,
-                    min_topic_score=profile["min_topic_score"],
-                )
-                if not candidates:
+    for idx, profile in enumerate(threshold_profiles, start=1):
+        if idx > 1:
+            print(
+                f"  [INFO] Broadening search (pass {idx}) "
+                f"likes>={profile['min_likes']} views>={profile['min_views']} topic>={profile['min_topic_score']}"
+            )
+        for keyword in keywords_to_try:
+            candidates = _select_candidate_from_keyword(
+                keyword=keyword,
+                config=config,
+                history=history,
+                feedback_terms=feedback_terms,
+                fatigue_terms=fatigue_terms,
+                min_likes=profile["min_likes"],
+                min_views=profile["min_views"],
+                min_duration=min_duration,
+                max_duration=max_duration,
+                min_topic_score=profile["min_topic_score"],
+            )
+            if not candidates:
+                continue
+
+            for score, topic_score, v, duration, likes, views, published_at in candidates[:8]:
+                play_url = v.get("play")
+                v_id = v.get("video_id") or v.get("id")
+                if not play_url:
                     continue
 
-                for score, topic_score, v, duration, likes, views, published_at in candidates[:8]:
-                    play_url = v.get("play")
-                    v_id = v.get("video_id") or v.get("id")
-                    if not play_url:
-                        continue
+                print(
+                    f"  [OK] Selected top-scoring vertical trend video: {v_id} "
+                    f"(Score: {int(score)}, Topic: {topic_score}, Likes: {likes}, Views: {views}, "
+                    f"Duration: {duration or 'unknown'}s, Published: {published_at.strftime('%Y-%m-%d') if published_at else 'unknown'})"
+                )
+                try:
+                    video_content = requests.get(play_url, timeout=config.get("download_timeout_seconds", 45)).content
+                except requests.RequestException as e:
+                    print(f"  [WARN] Download failed for {v_id}: {e}")
+                    continue
+                filepath = os.path.join(output_dir, "raw_video.mp4")
+                with open(filepath, "wb") as f:
+                    f.write(video_content)
 
+                valid_file, file_w, file_h, file_duration = _validate_downloaded_video(
+                    filepath,
+                    min_duration=min_duration,
+                    max_duration=max_duration,
+                )
+                if not valid_file:
                     print(
-                        f"  [OK] Selected top-scoring vertical trend video: {v_id} "
-                        f"(Score: {int(score)}, Topic: {topic_score}, Likes: {likes}, Views: {views}, "
-                        f"Duration: {duration or 'unknown'}s, Published: {published_at.strftime('%Y-%m-%d') if published_at else 'unknown'})"
+                        "  [WARN] Rejected downloaded file because it is not a true vertical 30s-60s clip "
+                        f"({file_w}x{file_h}, {file_duration:.1f}s)."
                     )
-                    video_content = requests.get(play_url, timeout=40).content
-                    filepath = os.path.join(output_dir, "raw_video.mp4")
-                    with open(filepath, "wb") as f:
-                        f.write(video_content)
+                    if os.path.exists(filepath):
+                        os.remove(filepath)
+                    continue
 
-                    valid_file, file_w, file_h, file_duration = _validate_downloaded_video(
-                        filepath,
-                        min_duration=min_duration,
-                        max_duration=max_duration,
+                quality = _sample_visual_quality(filepath)
+                if quality["quality_score"] < 16:
+                    print(
+                        "  [WARN] Rejected downloaded file due to very weak visual quality "
+                        f"(score={quality['quality_score']:.1f}, hook_motion={quality['first_hook_motion']:.1f})."
                     )
-                    if not valid_file:
-                        print(
-                            "  [WARN] Rejected downloaded file because it is not a true vertical 30s-60s clip "
-                            f"({file_w}x{file_h}, {file_duration:.1f}s)."
-                        )
-                        if os.path.exists(filepath):
-                            os.remove(filepath)
-                        continue
+                    if os.path.exists(filepath):
+                        os.remove(filepath)
+                    continue
+                if quality["first_hook_motion"] < 1.0:
+                    print(
+                        "  [INFO] Low-motion opener detected but accepted because other quality checks passed "
+                        f"(score={quality['quality_score']:.1f}, hook_motion={quality['first_hook_motion']:.1f})."
+                    )
 
-                    quality = _sample_visual_quality(filepath)
-                    if quality["quality_score"] < 16:
-                        print(
-                            "  [WARN] Rejected downloaded file due to very weak visual quality "
-                            f"(score={quality['quality_score']:.1f}, hook_motion={quality['first_hook_motion']:.1f})."
-                        )
-                        if os.path.exists(filepath):
-                            os.remove(filepath)
-                        continue
-                    if quality["first_hook_motion"] < 1.0:
-                        print(
-                            "  [INFO] Low-motion opener detected but accepted because other quality checks passed "
-                            f"(score={quality['quality_score']:.1f}, hook_motion={quality['first_hook_motion']:.1f})."
-                        )
+                human_risk = _human_presence_risk(filepath)
+                if human_risk > 0.22:
+                    print(
+                        "  [WARN] Rejected downloaded file because it looks like face-led / human-present content "
+                        f"(risk={human_risk:.2f})."
+                    )
+                    if os.path.exists(filepath):
+                        os.remove(filepath)
+                    continue
 
-                    human_risk = _human_presence_risk(filepath)
-                    if human_risk > 0.22:
-                        print(
-                            "  [WARN] Rejected downloaded file because it looks like face-led / human-present content "
-                            f"(risk={human_risk:.2f})."
-                        )
-                        if os.path.exists(filepath):
-                            os.remove(filepath)
-                        continue
-
-                    save_history(v_id, history_file)
-                    return {
-                        "filepath": filepath,
-                        "original_title": v.get("title", "Cinematic Video"),
-                        "id": v_id,
-                        "source": "tiktok",
-                        "duration": file_duration,
-                        "width": file_w,
-                        "height": file_h,
-                        "quality_score": quality["quality_score"],
-                    }
-    except Exception as e:
-        print(f"  [TIKWM] Search/Download failed: {e}")
+                save_history(v_id, history_file)
+                return {
+                    "filepath": filepath,
+                    "original_title": v.get("title", "Cinematic Video"),
+                    "id": v_id,
+                    "source": "tiktok",
+                    "duration": file_duration,
+                    "width": file_w,
+                    "height": file_h,
+                    "quality_score": quality["quality_score"],
+                }
 
     print("  [FAIL] Could not find a fresh high-quality video in this niche. Retrying later.")
     return None
