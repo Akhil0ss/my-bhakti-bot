@@ -3,7 +3,6 @@ import random
 import re
 import requests
 import numpy as np
-import yt_dlp
 from moviepy import VideoFileClip
 from engine.performance_tracker import get_feedback_terms, get_topic_fatigue_terms
 
@@ -142,101 +141,6 @@ def _score_video(video, keyword, config, feedback_terms, fatigue_terms):
     ), overlap + trend_overlap + feedback_overlap
 
 
-def _download_from_youtube_shorts(search_pool, history, config, output_dir):
-    min_duration = config.get("min_duration", 30)
-    max_duration = config.get("max_duration", 60)
-    min_topic_score = config.get("min_topic_score", 1)
-    feedback_terms = []
-    fatigue_terms = get_topic_fatigue_terms("akonymous" if "akonymous" in config.get("history_file", "").lower() else "bhakti")
-
-    for query in random.sample(search_pool, min(len(search_pool), 5)):
-        print(f'  [YT] Searching fallback source for "{query}"...')
-        ydl_opts = {
-            "quiet": True,
-            "no_warnings": True,
-            "extract_flat": True,
-        }
-        try:
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                results = ydl.extract_info(f"ytsearch12:{query} #shorts", download=False)
-            entries = results.get("entries", []) if results else []
-            candidates = []
-            for entry in entries:
-                vid_id = entry.get("id")
-                if not vid_id or vid_id in history:
-                    continue
-                duration = _to_float(entry.get("duration"), default=0)
-                if duration and not (min_duration <= duration <= max_duration):
-                    continue
-                score, topic_score = _score_video(
-                    {
-                        "title": entry.get("title", ""),
-                        "digg_count": entry.get("like_count", 0) or 0,
-                        "play_count": entry.get("view_count", 0) or 0,
-                        "share_count": 0,
-                        "comment_count": entry.get("comment_count", 0) or 0,
-                    },
-                    query,
-                    config,
-                    feedback_terms,
-                    fatigue_terms,
-                )
-                if topic_score < min_topic_score:
-                    continue
-                candidates.append((score, entry))
-
-            candidates.sort(key=lambda item: item[0], reverse=True)
-            for score, entry in candidates[:4]:
-                video_url = entry.get("webpage_url") or f"https://www.youtube.com/watch?v={entry['id']}"
-                output_template = os.path.join(output_dir, "raw_video.%(ext)s")
-                download_opts = {
-                    "format": "bestvideo*+bestaudio/best",
-                    "outtmpl": output_template,
-                    "quiet": True,
-                    "no_warnings": True,
-                }
-                with yt_dlp.YoutubeDL(download_opts) as ydl:
-                    info = ydl.extract_info(video_url, download=True)
-                    filename = ydl.prepare_filename(info)
-                if not os.path.exists(filename):
-                    for f in os.listdir(output_dir):
-                        if f.startswith("raw_video"):
-                            filename = os.path.join(output_dir, f)
-                            break
-
-                valid_file, file_w, file_h, file_duration = _validate_downloaded_video(
-                    filename,
-                    min_duration=min_duration,
-                    max_duration=max_duration,
-                )
-                if not valid_file:
-                    if os.path.exists(filename):
-                        os.remove(filename)
-                    continue
-
-                quality = _sample_visual_quality(filename)
-                if quality["quality_score"] < 28 or quality["first_hook_motion"] < 6:
-                    if os.path.exists(filename):
-                        os.remove(filename)
-                    continue
-
-                print(f"  [OK] YouTube Shorts fallback selected: {entry['id']} (Score: {int(score)})")
-                save_history(entry["id"], config.get("history_file", "downloaded.txt"))
-                return {
-                    "filepath": filename,
-                    "original_title": entry.get("title", "Shorts Video"),
-                    "id": entry["id"],
-                    "source": "youtube_shorts",
-                    "duration": file_duration,
-                    "width": file_w,
-                    "height": file_h,
-                    "quality_score": quality["quality_score"],
-                }
-        except Exception as e:
-            print(f"  [YT] Fallback search failed: {e}")
-
-    return None
-
 def download_media(config, output_dir="output", cookies_path=None):
     """AI-First TikTok strategy using niche-specific configuration."""
     os.makedirs(output_dir, exist_ok=True)
@@ -365,10 +269,6 @@ def download_media(config, output_dir="output", cookies_path=None):
                 }
     except Exception as e:
         print(f"  [TIKWM] Search/Download failed: {e}")
-
-    youtube_fallback = _download_from_youtube_shorts(search_pool, history, config, output_dir)
-    if youtube_fallback:
-        return youtube_fallback
 
     print("  [FAIL] Could not find a fresh high-quality video in this niche. Retrying later.")
     return None
