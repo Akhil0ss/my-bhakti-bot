@@ -247,14 +247,19 @@ def download_media(config, output_dir="output", cookies_path=None):
                     continue
 
                 quality = _sample_visual_quality(filepath)
-                if quality["quality_score"] < 28 or quality["first_hook_motion"] < 6:
+                if quality["quality_score"] < 16:
                     print(
-                        "  [WARN] Rejected downloaded file due to weak first-hook/visual quality "
+                        "  [WARN] Rejected downloaded file due to very weak visual quality "
                         f"(score={quality['quality_score']:.1f}, hook_motion={quality['first_hook_motion']:.1f})."
                     )
                     if os.path.exists(filepath):
                         os.remove(filepath)
                     continue
+                if quality["first_hook_motion"] < 1.0:
+                    print(
+                        "  [INFO] Low-motion opener detected but accepted because other quality checks passed "
+                        f"(score={quality['quality_score']:.1f}, hook_motion={quality['first_hook_motion']:.1f})."
+                    )
 
                 save_history(v_id, history_file)
                 return {
