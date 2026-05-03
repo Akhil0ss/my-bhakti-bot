@@ -27,8 +27,8 @@ def _write_short_clip(clip, output_path, caption_text="", watermark_text=""):
     if escaped_caption:
         font_path = "C\\\\:/Windows/Fonts/arialbd.ttf"
         ffmpeg_filters.append(
-            f"drawtext=text='{escaped_caption}':fontfile='{font_path}':fontcolor=white:fontsize=64:"
-            f"box=1:boxcolor=black@0.6:boxborderw=20:line_spacing=10:x=(w-text_w)/2:y=(h-text_h)/2"
+            f"drawtext=text='{escaped_caption}':fontfile='{font_path}':fontcolor=white:fontsize=48:"
+            f"borderw=2:bordercolor=black:line_spacing=10:x=(w-text_w)/2:y=h*0.15"
         )
     
     # Adding Watermark/Branding at bottom-right
