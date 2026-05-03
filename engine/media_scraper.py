@@ -44,8 +44,16 @@ def _validate_downloaded_video(filepath, min_duration, max_duration=None):
         # We want at least 150KB/s (approx 1.2Mbps) for decent quality
         is_high_quality = bytes_per_second > 150000 
         
-        is_valid = _is_vertical_video(width, height) and duration_valid and is_high_quality
-        return is_valid, width, height, duration
+        rejection_reason = None
+        if not _is_vertical_video(width, height):
+            rejection_reason = f"Bad ratio {width}x{height}"
+        elif not duration_valid:
+            rejection_reason = f"Bad duration {duration:.1f}s"
+        elif not is_high_quality:
+            rejection_reason = f"Low quality/bitrate ({bytes_per_second/1024:.1f} KB/s)"
+
+        is_valid = rejection_reason is None
+        return is_valid, width, height, duration, rejection_reason
     except Exception as e:
         print(f"  [WARN] Download validation failed: {e}")
         return False, 0, 0, 0
@@ -386,15 +394,12 @@ def download_media(
                 with open(filepath, "wb") as f:
                     f.write(video_content)
 
-                valid_file, file_w, file_h, file_duration = _validate_downloaded_video(
-                    filepath,
-                    min_duration=min_duration,
-                    max_duration=max_duration,
+                is_v, w, h, d, reason = _validate_downloaded_video(
+                    filepath, min_duration, max_duration
                 )
-                if not valid_file:
+                if not is_v:
                     print(
-                        "  [WARN] Rejected downloaded file because it is not a true vertical 30s-60s clip "
-                        f"({file_w}x{file_h}, {file_duration:.1f}s)."
+                        f"  [WARN] Rejected downloaded file: {reason}"
                     )
                     if os.path.exists(filepath):
                         os.remove(filepath)
@@ -431,9 +436,9 @@ def download_media(
                     "original_title": v.get("title", "Cinematic Video"),
                     "id": v_id,
                     "source": "tiktok",
-                    "duration": file_duration,
-                    "width": file_w,
-                    "height": file_h,
+                    "duration": d,
+                    "width": w,
+                    "height": h,
                     "quality_score": quality["quality_score"],
                 }
 

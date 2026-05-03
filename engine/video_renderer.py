@@ -28,8 +28,8 @@ def _write_short_clip(clip, output_path, watermark_text=""):
         audio_codec="aac",
         remove_temp=True,
         logger=None,
-        preset="slow", # Better quality encoding
-        bitrate="8000k", # High bitrate for crispness
+        preset="superfast", # Optimized for speed
+        bitrate="8000k", # High bitrate keeps quality good
         ffmpeg_params=[
             "-vf", ",".join(ffmpeg_filters),
             "-movflags", "+faststart",
