@@ -1,8 +1,10 @@
 .env
 token.json
+token_*.json
 client_secret.json
 __pycache__/
 output/
 downloaded.txt
 venv/
 .venv/
+cookies.txt

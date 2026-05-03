@@ -17,10 +17,10 @@ HOOKS = {
         "🕉️ 'हर हर महादेव' टाइप करो — शिव जी की कृपा बरसेगी!"
     ],
     "akonymous": [
-        "🕵️‍♂️ Comment 'TRUTH' if you want to see more hidden facts.",
-        "⚠️ Share this with someone who needs to wake up.",
-        "🧠 Did you know this? Let us know your thoughts in the comments.",
-        "✨ Subscribe to AKONYMOUS to decode more reality."
+        "🎬 Comment your favorite movie if you loved this!",
+        "✨ Subscribe for more iconic movie moments!",
+        "😱 Did you expect this to happen? Let us know in the comments!",
+        "🔥 Share this with a movie buff!"
     ]
 }
 
@@ -33,8 +33,8 @@ TREND_TAGS = {
         "#mahadev", "#hanuman", "#krishna", "#jaishreeram", f"#{TREND_MONTH_TOKEN}"
     ],
     "akonymous": [
-        "#shorts", "#foryou", "#viral", "#trending", "#mystery", "#facts",
-        "#truth", "#hiddenhistory", "#simulationtheory", "#darkfacts", f"#{TREND_MONTH_TOKEN}"
+        "#shorts", "#foryou", "#viral", "#trending", "#movieclips", "#cinema",
+        "#hollywood", "#bestscenes", "#film", "#movie", f"#{TREND_MONTH_TOKEN}"
     ],
 }
 
