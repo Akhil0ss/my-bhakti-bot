@@ -37,7 +37,14 @@ def _validate_downloaded_video(filepath, min_duration, max_duration=None):
             width, height = clip.size
             duration = clip.duration or 0
         duration_valid = duration >= min_duration and (max_duration is None or duration <= max_duration)
-        is_valid = _is_vertical_video(width, height) and duration_valid
+        
+        # Quality check: Bytes per second (Bitrate estimation)
+        file_size = os.path.getsize(filepath)
+        bytes_per_second = file_size / max(duration, 0.1)
+        # We want at least 150KB/s (approx 1.2Mbps) for decent quality
+        is_high_quality = bytes_per_second > 150000 
+        
+        is_valid = _is_vertical_video(width, height) and duration_valid and is_high_quality
         return is_valid, width, height, duration
     except Exception as e:
         print(f"  [WARN] Download validation failed: {e}")

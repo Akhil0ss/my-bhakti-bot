@@ -166,7 +166,8 @@ def run(niche_name, no_upload=False, cookies_path=None):
         final_video_path = os.path.join(OUTPUT_DIR, "final_shorts.mp4")
         final_video = trim_video(
             input_path=raw_video,
-            output_path=final_video_path
+            output_path=final_video_path,
+            caption=script_data.get("title", "")
         )
 
     if not final_video:

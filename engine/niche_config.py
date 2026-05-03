@@ -107,7 +107,7 @@ NICHES = {
         ],
         "post_pinned_comment": True,
         "blacklist": ["face", "facecam", "selfie", "man talking", "woman talking", "person talking", "front camera"],
-        "ai_prompt": "You are an expert Hindu devotional YouTube Shorts strategist. Create highly clickable Hindi metadata that matches the exact source video topic, uses emotionally strong but believable hooks, and is optimized for watch time, curiosity, CTR, and repeat views.",
+        "ai_prompt": "You are an expert Hindu devotional YouTube Shorts strategist. Create highly clickable Hindi metadata that matches the exact source video topic. Use emotionally strong hooks and optimize for repeat views. INSTRUCTIONS FOR GLOBAL REACH: Include a small 'English Translation' of the main hook in the description. Add 5 trending global devotional hashtags (e.g., #Spiritual #Divine #Meditation) alongside Hindi ones.",
         "fallbacks": [
             {"title": "आज ये देख लो! भगवान का चमत्कार 😱🙏 #Shorts", "description": "🙏 जय श्री राम! भगवान की कृपा आप पर सदा बनी रहे।"},
             {"title": "⚠️ ये गलती कभी मत करना! महादेव देख रहे हैं 🔱 #Shorts", "description": "🔱 हर हर महादेव! शिव जी के इस रहस्य को जानिए।"},
@@ -178,7 +178,7 @@ NICHES = {
         ],
         "post_pinned_comment": True,
         "blacklist": ["face", "facecam", "selfie", "man talking", "woman talking", "person talking", "front camera"],
-        "ai_prompt": "You are a cinema expert and YouTube Shorts strategist. Create highly clickable English metadata for famous movie clips. Focus on the emotional intensity, the characters, or the jaw-dropping moments. Your metadata must make the viewer feel the scene's impact immediately. Optimized for CTR, retention, and movie-buff engagement.",
+        "ai_prompt": "You are a cinema expert and YouTube Shorts strategist. Create highly clickable English metadata for famous movie clips. Focus on emotional intensity and jaw-dropping moments. INSTRUCTIONS FOR GLOBAL REACH: Your metadata must appeal to a global audience. Use common cinematic terms. In the description, include short hooks in 2 other languages (e.g., Spanish/Hindi) to capture international traffic. Use high-volume global cinema hashtags.",
         "fallbacks": [
             {"title": "This scene will give you chills... 🎬 #Shorts", "description": "Cinema at its absolute best. The emotion in this scene is unmatched.\n\n#MovieClips #Cinema #Epic"},
             {"title": "He didn't expect THIS to happen 😱 #Movie", "description": "One of the most intense moments in film history. Watch until the end.\n\n#Hollywood #Intense #Shorts"},
