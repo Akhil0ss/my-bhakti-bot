@@ -190,6 +190,38 @@ NICHES = {
         "token_secret": "YOUTUBE_TOKEN_JSON_AKONYMOUS",
         "client_secret_file": "client_secret.json",
         "watermark": "@AKONYMOUSS"
+    },
+    "motivation": {
+        "keywords": [
+            "motivational quotes AI voice",
+            "discipline mindset stoic",
+            "success secrets wealth",
+            "productivity hacks morning routine",
+            "inspirational speeches cinematic",
+            "stoicism philosophy wisdom",
+            "alpha mindset growth",
+            "hard work motivation reels",
+            "millionaire mindset shorts"
+        ],
+        "target_tiktok_users": [
+            "mental_success", "motivation.mentor", "themotivationark", "mindset.vibe"
+        ],
+        "query_modifiers": [
+            "cinematic", "viral 2026", "global trend", "4k edit", "epic", "mindset", "hustle"
+        ],
+        "min_likes": 1000,
+        "min_views": 10000,
+        "min_duration": 30,
+        "max_duration": 65,
+        "max_age_days": 180,
+        "preferred_hours_ist": [10, 16, 20, 0, 4],
+        "default_language": "en",
+        "default_audio_language": "en",
+        "token_file": "token_motivation.json",
+        "token_secret": "YOUTUBE_TOKEN_JSON_MOTIVATION",
+        "client_secret_file": "client_secret_motivation.json",
+        "watermark": "@GrindMinds",
+        "ai_prompt": "You are a world-class motivational strategist. Create intense, life-changing English metadata. Focus on discipline, stoicism, and elite performance. Targeted at a global audience (US/India). Use powerful hooks that make the viewer feel like they are falling behind if they don't watch."
     }
 }
 

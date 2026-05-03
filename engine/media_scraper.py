@@ -323,7 +323,59 @@ def download_media(
     feedback_terms = get_feedback_terms(niche)
     fatigue_terms = get_topic_fatigue_terms(niche)
     
-    # Select a high-quality keyword from niche config
+    # NEW: Prioritize specific TikTok target users if defined in niche config
+    target_users = config.get("target_tiktok_users", [])
+    if target_users:
+        random.shuffle(target_users)
+        for user in target_users:
+            print(f"  [TIKWM] Checking priority feed for user: @{user}...")
+            user_url = f"https://www.tikwm.com/api/user/posts?unique_id={user}&count=15&cursor=0"
+            try:
+                resp = requests.get(user_url, timeout=15).json()
+                if resp.get("code") == 0 and resp.get("data", {}).get("videos"):
+                    # Process these videos through existing selection logic
+                    v_list = resp["data"]["videos"]
+                    candidates = _process_raw_candidates(
+                        v_list, "priority_user", config, history, feedback_terms, fatigue_terms,
+                        config.get("min_likes", 500), config.get("min_views", 5000),
+                        min_duration_override or config.get("min_duration", 30),
+                        max_duration_override or config.get("max_duration", 60),
+                        config.get("min_topic_score", 1)
+                    )
+                    if candidates:
+                        best = candidates[0]
+                        # Best is (score, topic_score, v, duration, likes, views, published_at)
+                        v = best[2]
+                        v_id = v.get("id") or v.get("video_id")
+                        print(f"  [OK] Selected high-quality clip from @{user} feed: {v_id}")
+                        # Proceed with download
+                        video_url = v.get("play") or v.get("hdplay")
+                        if video_url:
+                            # Re-using internal download logic
+                            resp_video = requests.get(video_url, timeout=30)
+                            filepath = os.path.join(output_dir, "raw_video.mp4")
+                            with open(filepath, "wb") as f:
+                                f.write(resp_video.content)
+                            
+                            is_v, w, h, d, reason = _validate_downloaded_video(
+                                filepath, min_duration_override or config.get("min_duration", 30), 
+                                max_duration_override or config.get("max_duration", 60)
+                            )
+                            if is_v:
+                                return {
+                                    "filepath": filepath,
+                                    "original_title": v.get("title", "Motivational Video"),
+                                    "id": v_id,
+                                    "source": "tiktok_user",
+                                    "duration": d,
+                                    "width": w,
+                                    "height": h,
+                                    "quality_score": best[0]
+                                }
+            except Exception as e:
+                print(f"  [WARN] User feed priority check failed for @{user}: {e}")
+
+    # Select a high-quality keyword from niche config (Fallback if no user video selected)
     search_pool = _build_search_pool(config, feedback_terms)
     if not search_pool:
         print("  [ERROR] No keywords found in niche config.")
