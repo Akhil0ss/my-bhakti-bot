@@ -453,18 +453,23 @@ def download_media(
                     print(
                         f"  [WARN] Rejected downloaded file: {reason}"
                     )
-                    if os.path.exists(filepath):
-                        os.remove(filepath)
+                    try:
+                        if os.path.exists(filepath):
+                            os.remove(filepath)
+                    except:
+                        pass
                     continue
 
                 quality = _sample_visual_quality(filepath)
                 if quality["quality_score"] < 16:
                     print(
-                        "  [WARN] Rejected downloaded file due to very weak visual quality "
-                        f"(score={quality['quality_score']:.1f}, hook_motion={quality['first_hook_motion']:.1f})."
+                        f"  [WARN] Rejected downloaded file due to very weak visual quality (score={quality['quality_score']:.1f}, hook_motion={quality['first_hook_motion']:.1f})."
                     )
-                    if os.path.exists(filepath):
-                        os.remove(filepath)
+                    try:
+                        if os.path.exists(filepath):
+                            os.remove(filepath)
+                    except:
+                        pass
                     continue
                 if quality["first_hook_motion"] < 1.0:
                     print(
@@ -475,11 +480,13 @@ def download_media(
                 human_risk = _human_presence_risk(filepath)
                 if human_risk > 1.25:
                     print(
-                        "  [WARN] Rejected downloaded file because it looks like face-led / human-present content "
-                        f"(risk={human_risk:.2f})."
+                        f"  [WARN] Rejected downloaded file because it looks like face-led / human-present content (risk={human_risk:.2f})."
                     )
-                    if os.path.exists(filepath):
-                        os.remove(filepath)
+                    try:
+                        if os.path.exists(filepath):
+                            os.remove(filepath)
+                    except:
+                        pass
                     continue
 
                 save_history(v_id, history_file)
