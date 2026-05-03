@@ -38,7 +38,7 @@ PIN_COMMENTS = [
     "⚡ जय बजरंगबली! शेयर करो और देखो चमत्कार! 🙏\n\n👉 SUBSCRIBE = रोज़ भक्ति का डोज़! 🔔",
 ]
 
-def get_authenticated_service(token_file="token.json", token_secret_env=None):
+def get_authenticated_service(token_file="token.json", token_secret_env=None, client_secret_file="client_secret.json"):
     """Handles OAuth 2.0 authentication for YouTube API."""
     creds = _load_credentials(token_file, token_secret_env=token_secret_env)
 
@@ -57,12 +57,12 @@ def get_authenticated_service(token_file="token.json", token_secret_env=None):
                 ) from e
         else:
             print(f"  First time auth required for {token_file}. Please sign in.")
-            if not os.path.exists(CLIENT_SECRET_FILE):
+            if not os.path.exists(client_secret_file):
                 raise FileNotFoundError(
-                    f"'{CLIENT_SECRET_FILE}' not found! "
+                    f"'{client_secret_file}' not found! "
                     "Download it from Google Cloud Console > APIs > Credentials."
                 )
-            flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRET_FILE, SCOPES)
+            flow = InstalledAppFlow.from_client_secrets_file(client_secret_file, SCOPES)
             creds = flow.run_local_server(port=0)
             
         with open(token_file, "w") as token:
@@ -104,6 +104,7 @@ def upload_video(
     youtube=None,
     token_file="token.json",
     token_secret_env=None,
+    client_secret_file="client_secret.json",
     category_id="22",
     default_language="hi",
     default_audio_language="hi",
@@ -111,7 +112,11 @@ def upload_video(
     enable_pinned_comment=False,
 ):
     """Uploads a video to YouTube using a specific token file."""
-    youtube = youtube or get_authenticated_service(token_file=token_file, token_secret_env=token_secret_env)
+    youtube = youtube or get_authenticated_service(
+        token_file=token_file, 
+        token_secret_env=token_secret_env, 
+        client_secret_file=client_secret_file
+    )
 
     # Clean hashtags into a list of words
     tags = [t.strip().replace("#", "") for t in tags_str.split() if t.startswith("#")]

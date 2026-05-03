@@ -23,6 +23,7 @@ def _upload_with_metadata(niche_name, config, youtube, video_path, script_data, 
         tags_str=script_data['tags'],
         token_file=config["token_file"],
         token_secret_env=config.get("token_secret"),
+        client_secret_file=config.get("client_secret_file", "client_secret.json"),
         default_language=config.get("default_language", "hi"),
         default_audio_language=config.get("default_audio_language", "hi"),
         pinned_comment_text=script_data.get("comment"),
@@ -56,6 +57,7 @@ def run(niche_name, no_upload=False, cookies_path=None):
         youtube = get_authenticated_service(
             token_file=config["token_file"],
             token_secret_env=config.get("token_secret"),
+            client_secret_file=config.get("client_secret_file", "client_secret.json"),
         )
         sync_recent_video_stats(niche_name, youtube)
     except Exception as analytics_err:
