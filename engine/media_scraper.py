@@ -421,7 +421,7 @@ def download_media(
                     )
 
                 human_risk = _human_presence_risk(filepath)
-                if human_risk > 0.85:
+                if human_risk > 1.25:
                     print(
                         "  [WARN] Rejected downloaded file because it looks like face-led / human-present content "
                         f"(risk={human_risk:.2f})."
