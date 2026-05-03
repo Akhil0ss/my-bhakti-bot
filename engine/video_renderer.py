@@ -4,7 +4,7 @@ import numpy as np
 from datetime import datetime, timezone
 from moviepy import VideoFileClip
 
-def _write_short_clip(clip, output_path, caption_text=""):
+def _write_short_clip(clip, output_path, caption_text="", watermark_text=""):
     """
     Writes a high-quality video using advanced FFmpeg filters for 
     upscaling, sharpening, and premium text overlays.
@@ -31,6 +31,13 @@ def _write_short_clip(clip, output_path, caption_text=""):
         ffmpeg_filters.append(
             f"drawtext=text='{clean_caption}':fontfile='{font_path}':fontcolor=white:fontsize=64:"
             f"box=1:boxcolor=black@0.6:boxborderw=20:x=(w-text_w)/2:y=(h-text_h)/2"
+        )
+    
+    # Adding Watermark/Branding at bottom-right
+    if watermark_text:
+        ffmpeg_filters.append(
+            f"drawtext=text='{watermark_text}':fontfile='C\\\\:/Windows/Fonts/arial.ttf':"
+            f"fontcolor=white@0.4:fontsize=32:x=w-text_w-40:y=h-text_h-40"
         )
 
     clip.write_videofile(
@@ -77,7 +84,7 @@ def _find_best_hook_time(video, min_duration):
     except:
         return 0
 
-def trim_video(input_path, output_path, min_duration=30, max_duration=60, caption=""):
+def trim_video(input_path, output_path, min_duration=30, max_duration=60, caption="", watermark=""):
     """
     Trims with Smart Hook detection and applies high-quality rendering.
     """
@@ -98,7 +105,7 @@ def trim_video(input_path, output_path, min_duration=30, max_duration=60, captio
             print(f"  [RENDER] Smart Hook detected at {start:.1f}s. Duration: {target_len:.1f}s")
             
             final_clip = video.subclipped(start, end)
-            _write_short_clip(final_clip, output_path, caption_text=caption)
+            _write_short_clip(final_clip, output_path, caption_text=caption, watermark_text=watermark)
             
         return output_path
     except Exception as e:

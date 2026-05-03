@@ -147,7 +147,10 @@ def _parse_ai_output(output, title, description, tags, comment):
                 description = parts[1].split("TAGS:")[0].split("COMMENT:")[0].strip()
         elif line_up.startswith("COMMENT:"):
             comment = line.split(":", 1)[1].strip()
-    return title_candidates or [title], description, tags, comment
+        elif line_up.startswith("COMMUNITY_POST:"):
+            community_idea = line.split(":", 1)[1].strip()
+            return title_candidates or [title], description, tags, comment, community_idea
+    return title_candidates or [title], description, tags, comment, "Share your thoughts!"
 
 
 def _build_prompt(original_title, config, engagement_hook, series_label):
@@ -169,7 +172,8 @@ def _build_prompt(original_title, config, engagement_hook, series_label):
         "TITLE_3: [Alternative option]\n"
         "DESCRIPTION: [The Description]\n"
         "TAGS: [The Tags]\n"
-        "COMMENT: [Pinned comment text]"
+        "COMMENT: [Pinned comment text]\n"
+        "COMMUNITY_POST: [A viral poll or community post idea related to this video]"
     )
 
 
@@ -304,14 +308,14 @@ def generate_rewrite_and_quote(original_title, config):
         try:
             output = _generate_with_groq(prompt, niche)
             if output:
-                title_candidates, description, tags, comment = _parse_ai_output(output, title, description, tags, comment)
+                title_candidates, description, tags, comment, community_idea = _parse_ai_output(output, title, description, tags, comment)
                 title = _pick_best_title(title_candidates, title, original_title)
         except Exception as e:
             print(f"  [WARN] Groq failed: {e}")
             try:
                 output = _generate_with_gemini(prompt, niche)
                 if output:
-                    title_candidates, description, tags, comment = _parse_ai_output(output, title, description, tags, comment)
+                    title_candidates, description, tags, comment, community_idea = _parse_ai_output(output, title, description, tags, comment)
                     title = _pick_best_title(title_candidates, title, original_title)
             except Exception as gemini_error:
                 print(f"  [WARN] Gemini failed: {gemini_error}. Using fallbacks.")
@@ -343,6 +347,7 @@ def generate_rewrite_and_quote(original_title, config):
         "description": _enforce_description_hashtags(description, cleaned_tags, engagement_hook, series_label, niche, original_title),
         "comment": comment,
         "series_label": series_label,
+        "community_idea": community_idea if 'community_idea' in locals() else "Check out our latest video!"
     }
 
 if __name__ == "__main__":

@@ -116,7 +116,8 @@ NICHES = {
         "history_file": "download_history_bhakti.txt",
         "token_file": "token_bhakti.json",
         "token_secret": "YOUTUBE_TOKEN_JSON",
-        "client_secret_file": "client_secret_bhakti.json"
+        "client_secret_file": "client_secret_bhakti.json",
+        "watermark": "@BhaktiBot"
     },
     "akonymous": {
         "keywords": [
@@ -187,7 +188,9 @@ NICHES = {
         "history_file": "download_history_akonymous.txt",
         "token_file": "token_akonymous.json",
         "token_secret": "YOUTUBE_TOKEN_JSON_AKONYMOUS",
-        "client_secret_file": "client_secret.json"
+        "client_secret_file": "client_secret.json",
+        "watermark": "@AkonymousMovie"
+    }
     }
 }
 
