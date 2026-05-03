@@ -232,9 +232,8 @@ def _generate_with_groq(prompt, niche):
     requested_model = os.getenv("GROQ_MODEL", "").strip()
     candidate_models = [model for model in [
         requested_model,
-        "openai/gpt-oss-120b",
-        "llama-3.3-70b-versatile",
-        "openai/gpt-oss-20b",
+        "gpt-oss-120b",
+        "llama-3.1-8b-instant",
     ] if model]
 
     last_error = None
@@ -272,16 +271,7 @@ def _generate_with_groq(prompt, niche):
     return None
 
 
-def _generate_with_gemini(prompt, niche):
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        return None
 
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-2.0-flash")
-    print(f"  [INFO] Groq unavailable. Generating {niche.upper()} metadata via Gemini...")
-    response = model.generate_content(prompt)
-    return response.text.strip()
 
 def generate_rewrite_and_quote(original_title, config):
     """Generates niche-specific viral metadata."""
@@ -312,27 +302,11 @@ def generate_rewrite_and_quote(original_title, config):
                 title = _pick_best_title(title_candidates, title, original_title)
         except Exception as e:
             print(f"  [WARN] Groq failed: {e}")
-            try:
-                output = _generate_with_gemini(prompt, niche)
-                if output:
-                    title_candidates, description, tags, comment, hook_line = _parse_ai_output(output, title, description, tags, comment)
-                    title = _pick_best_title(title_candidates, title, original_title)
-            except Exception as gemini_error:
-                print(f"  [WARN] Gemini failed: {gemini_error}. Using fallbacks.")
-                break
+            break
         else:
             if not output:
-                try:
-                    output = _generate_with_gemini(prompt, niche)
-                    if output:
-                        title_candidates, description, tags, comment, hook_line = _parse_ai_output(output, title, description, tags, comment)
-                        title = _pick_best_title(title_candidates, title, original_title)
-                    else:
-                        print("  [WARN] No Groq/Gemini API key found. Using fallbacks.")
-                        break
-                except Exception as gemini_error:
-                    print(f"  [WARN] Gemini failed: {gemini_error}. Using fallbacks.")
-                    break
+                print("  [WARN] No Groq API output found. Using fallbacks.")
+                break
 
         if not _is_weak_title(title, original_title):
             break
