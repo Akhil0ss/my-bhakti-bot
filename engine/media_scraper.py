@@ -28,7 +28,7 @@ def _to_float(value, default=0.0):
 def _is_vertical_video(width, height):
     if width <= 0 or height <= 0:
         return False
-    return height > width and (height / width) >= 1.5
+    return height > width and (height / width) >= 1.25
 
 
 def _validate_downloaded_video(filepath, min_duration, max_duration=None):
@@ -409,7 +409,7 @@ def download_media(
                     )
 
                 human_risk = _human_presence_risk(filepath)
-                if human_risk > 0.22:
+                if human_risk > 0.85:
                     print(
                         "  [WARN] Rejected downloaded file because it looks like face-led / human-present content "
                         f"(risk={human_risk:.2f})."
