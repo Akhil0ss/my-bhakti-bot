@@ -1,6 +1,7 @@
 import os
 import random
 import numpy as np
+import textwrap
 from datetime import datetime, timezone
 from moviepy import VideoFileClip
 
@@ -9,14 +10,13 @@ def _write_short_clip(clip, output_path, caption_text="", watermark_text=""):
     Writes a high-quality video using advanced FFmpeg filters for 
     upscaling, sharpening, and premium text overlays.
     """
-    # Clean caption for FFmpeg
+    # Clean and wrap caption for FFmpeg
     clean_caption = (caption_text or "").replace("'", "").replace(":", "").strip()
     
-    # Advanced FFmpeg filter string:
-    # 1. Scale to 1080:1920 (Shorts format)
-    # 2. Unsharp filter for 4K-like crispness
-    # 3. Drawtext for premium hook at center
-    # 4. EQ for better contrast/saturation
+    # Word Wrap logic: Split into lines of ~20 characters
+    wrapped_caption = "\n".join(textwrap.wrap(clean_caption, width=22)) if clean_caption else ""
+    # Escape newlines for FFmpeg
+    escaped_caption = wrapped_caption.replace("\n", "\r") 
     
     ffmpeg_filters = [
         "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920",
@@ -24,13 +24,11 @@ def _write_short_clip(clip, output_path, caption_text="", watermark_text=""):
         "eq=contrast=1.1:saturation=1.2", # Better colors
     ]
     
-    if clean_caption:
-        # Drawing a premium-looking box with text
-        # Using a default font that exists on most systems
+    if escaped_caption:
         font_path = "C\\\\:/Windows/Fonts/arialbd.ttf"
         ffmpeg_filters.append(
-            f"drawtext=text='{clean_caption}':fontfile='{font_path}':fontcolor=white:fontsize=64:"
-            f"box=1:boxcolor=black@0.6:boxborderw=20:x=(w-text_w)/2:y=(h-text_h)/2"
+            f"drawtext=text='{escaped_caption}':fontfile='{font_path}':fontcolor=white:fontsize=64:"
+            f"box=1:boxcolor=black@0.6:boxborderw=20:line_spacing=10:x=(w-text_w)/2:y=(h-text_h)/2"
         )
     
     # Adding Watermark/Branding at bottom-right
