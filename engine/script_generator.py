@@ -232,8 +232,8 @@ def _generate_with_groq(prompt, niche):
     requested_model = os.getenv("GROQ_MODEL", "").strip()
     candidate_models = [model for model in [
         requested_model,
-        "gpt-oss-120b",
         "llama-3.1-8b-instant",
+        "llama-3.3-70b-versatile",
     ] if model]
 
     last_error = None
