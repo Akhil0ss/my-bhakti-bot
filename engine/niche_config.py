@@ -117,7 +117,7 @@ NICHES = {
         "token_file": "token_bhakti.json",
         "token_secret": "YOUTUBE_TOKEN_JSON",
         "client_secret_file": "client_secret_bhakti.json",
-        "watermark": "@BhaktiBot"
+        "watermark": "@MANASVI"
     },
     "akonymous": {
         "keywords": [
@@ -189,7 +189,8 @@ NICHES = {
         "token_file": "token_akonymous.json",
         "token_secret": "YOUTUBE_TOKEN_JSON_AKONYMOUS",
         "client_secret_file": "client_secret.json",
-        "watermark": "@AkonymousMovie"
+        "watermark": "@AKONYMOUSS"
+    }
     }
     }
 }
