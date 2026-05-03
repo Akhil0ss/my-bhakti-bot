@@ -25,10 +25,12 @@ def _to_float(value, default=0.0):
         return default
 
 
-def _is_vertical_video(width, height):
+def _is_valid_aspect_ratio(width, height):
     if width <= 0 or height <= 0:
         return False
-    return height > width and (height / width) >= 1.25
+    # User requested Square (1:1) up to 9:16.
+    # Height must be greater than or equal to width (No horizontal).
+    return height >= width
 
 
 def _validate_downloaded_video(filepath, min_duration, max_duration=None):
@@ -45,8 +47,8 @@ def _validate_downloaded_video(filepath, min_duration, max_duration=None):
         is_high_quality = bytes_per_second > 150000 
         
         rejection_reason = None
-        if not _is_vertical_video(width, height):
-            rejection_reason = f"Bad ratio {width}x{height}"
+        if not _is_valid_aspect_ratio(width, height):
+            rejection_reason = f"Invalid aspect ratio {width}x{height} (Must be Square or Vertical)"
         elif not duration_valid:
             rejection_reason = f"Bad duration {duration:.1f}s"
         elif not is_high_quality:
@@ -292,7 +294,7 @@ def _select_candidate_from_keyword(
             continue
         if duration and not (duration >= min_duration and (max_duration is None or duration <= max_duration)):
             continue
-        if width and height and not _is_vertical_video(width, height):
+        if width and height and not _is_valid_aspect_ratio(width, height):
             continue
 
         score, topic_score = _score_video(v, keyword, config, feedback_terms, fatigue_terms)

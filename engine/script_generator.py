@@ -133,21 +133,24 @@ def _is_weak_title(title, original_title):
 
 def _parse_ai_output(output, title, description, tags, comment):
     title_candidates = []
+    hook_line = ""
     for line in output.split("\n"):
         line_up = line.upper()
         if line_up.startswith("TITLE_") or line_up.startswith("TITLE "):
             title_candidates.append(line.split(":", 1)[1].strip())
         elif line_up.startswith("TITLE:"):
             title_candidates.append(line.split(":", 1)[1].strip())
+        elif line_up.startswith("HOOK_LINE:"):
+            hook_line = line.split(":", 1)[1].strip().strip('"').strip("'")
         elif line_up.startswith("TAGS:"):
             tags = line.split(":", 1)[1].strip()
         elif line_up.startswith("DESCRIPTION:"):
             parts = output.split("DESCRIPTION:", 1)
             if len(parts) > 1:
-                description = parts[1].split("TAGS:")[0].split("COMMENT:")[0].strip()
+                description = parts[1].split("TAGS:")[0].split("COMMENT:")[0].split("HOOK_LINE:")[0].strip()
         elif line_up.startswith("COMMENT:"):
             comment = line.split(":", 1)[1].strip()
-    return title_candidates or [title], description, tags, comment
+    return title_candidates or [title], description, tags, comment, hook_line
 
 
 def _build_prompt(original_title, config, engagement_hook, series_label):
@@ -167,6 +170,7 @@ def _build_prompt(original_title, config, engagement_hook, series_label):
         "TITLE_1: [Best option]\n"
         "TITLE_2: [Alternative option]\n"
         "TITLE_3: [Alternative option]\n"
+        "HOOK_LINE: [Ultra-short curiosity hook, max 6 words]\n"
         "DESCRIPTION: [The Description]\n"
         "TAGS: [The Tags]\n"
         "COMMENT: [Pinned comment text]"
@@ -304,14 +308,14 @@ def generate_rewrite_and_quote(original_title, config):
         try:
             output = _generate_with_groq(prompt, niche)
             if output:
-                title_candidates, description, tags, comment = _parse_ai_output(output, title, description, tags, comment)
+                title_candidates, description, tags, comment, hook_line = _parse_ai_output(output, title, description, tags, comment)
                 title = _pick_best_title(title_candidates, title, original_title)
         except Exception as e:
             print(f"  [WARN] Groq failed: {e}")
             try:
                 output = _generate_with_gemini(prompt, niche)
                 if output:
-                    title_candidates, description, tags, comment = _parse_ai_output(output, title, description, tags, comment)
+                    title_candidates, description, tags, comment, hook_line = _parse_ai_output(output, title, description, tags, comment)
                     title = _pick_best_title(title_candidates, title, original_title)
             except Exception as gemini_error:
                 print(f"  [WARN] Gemini failed: {gemini_error}. Using fallbacks.")
@@ -321,7 +325,7 @@ def generate_rewrite_and_quote(original_title, config):
                 try:
                     output = _generate_with_gemini(prompt, niche)
                     if output:
-                        title_candidates, description, tags, comment = _parse_ai_output(output, title, description, tags, comment)
+                        title_candidates, description, tags, comment, hook_line = _parse_ai_output(output, title, description, tags, comment)
                         title = _pick_best_title(title_candidates, title, original_title)
                     else:
                         print("  [WARN] No Groq/Gemini API key found. Using fallbacks.")
@@ -343,6 +347,7 @@ def generate_rewrite_and_quote(original_title, config):
         "description": _enforce_description_hashtags(description, cleaned_tags, engagement_hook, series_label, niche, original_title),
         "comment": comment,
         "series_label": series_label,
+        "hook_line": hook_line or title.split("#")[0].strip()[:30],
     }
 
 if __name__ == "__main__":

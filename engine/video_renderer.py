@@ -5,17 +5,28 @@ import textwrap
 from datetime import datetime, timezone
 from moviepy import VideoFileClip
 
-def _write_short_clip(clip, output_path, watermark_text=""):
+def _write_short_clip(clip, output_path, watermark_text="", hook_text=""):
     """
-    Writes a high-quality video using advanced FFmpeg filters for 
-    upscaling, sharpening, and premium text overlays.
+    Writes a high-quality video with custom overlays.
+    Hook text is shown for the first 0.8 seconds to serve as a thumbnail.
     """
     ffmpeg_filters = [
-        "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920",
         "unsharp=5:5:1.0:5:5:0.0", # Sharpening
         "eq=contrast=1.1:saturation=1.2", # Better colors
     ]
     
+    # Hook Line Overlay (Forced Thumbnail)
+    if hook_text:
+        # Sanitize for FFmpeg drawtext
+        safe_hook = hook_text.replace("'", "").replace(":", "").replace('"', "")
+        # Wrap text to avoid overflow (safer width for Square/Vertical)
+        wrapped_hook = "\\\n".join(textwrap.wrap(safe_hook, width=15))
+        ffmpeg_filters.append(
+            f"drawtext=text='{wrapped_hook}':fontfile='C\\\\:/Windows/Fonts/arial.ttf':"
+            f"fontcolor=yellow:fontsize=60:box=1:boxcolor=black@0.6:boxborderw=10:"
+            f"x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t,0,0.8)'"
+        )
+
     if watermark_text:
         ffmpeg_filters.append(
             f"drawtext=text='{watermark_text}':fontfile='C\\\\:/Windows/Fonts/arial.ttf':"
@@ -28,8 +39,8 @@ def _write_short_clip(clip, output_path, watermark_text=""):
         audio_codec="aac",
         remove_temp=True,
         logger=None,
-        preset="superfast", # Optimized for speed
-        bitrate="8000k", # High bitrate keeps quality good
+        preset="fast",
+        bitrate="8000k",
         ffmpeg_params=[
             "-vf", ",".join(ffmpeg_filters),
             "-movflags", "+faststart",
@@ -66,7 +77,7 @@ def _find_best_hook_time(video, min_duration):
     except:
         return 0
 
-def trim_video(input_path, output_path, min_duration=30, max_duration=60, watermark=""):
+def trim_video(input_path, output_path, min_duration=30, max_duration=60, watermark="", hook_line=""):
     """
     Trims with Smart Hook detection and applies high-quality rendering.
     """
@@ -87,7 +98,7 @@ def trim_video(input_path, output_path, min_duration=30, max_duration=60, waterm
             print(f"  [RENDER] Smart Hook detected at {start:.1f}s. Duration: {target_len:.1f}s")
             
             final_clip = video.subclipped(start, end)
-            _write_short_clip(final_clip, output_path, watermark_text=watermark)
+            _write_short_clip(final_clip, output_path, watermark_text=watermark, hook_text=hook_line)
             
         return output_path
     except Exception as e:
@@ -121,9 +132,9 @@ def split_video_into_parts(input_path, output_dir, part_min_duration=35, part_ma
                 clip = video.subclipped(start, end)
                 output_path = os.path.join(output_dir, f"{batch_id}_part_{part_index}.mp4")
                 
-                # Using part of the source title as caption for parts
-                part_caption = f"Part {part_index}"
-                _write_short_clip(clip, output_path, caption_text=part_caption)
+                # Using part of the source title as hook for parts
+                part_hook = f"Part {part_index}"
+                _write_short_clip(clip, output_path, hook_text=part_hook)
                 
                 outputs.append({
                     "path": output_path,

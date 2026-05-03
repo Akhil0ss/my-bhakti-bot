@@ -107,7 +107,7 @@ NICHES = {
         ],
         "post_pinned_comment": True,
         "blacklist": ["face", "facecam", "selfie", "man talking", "woman talking", "person talking", "front camera"],
-        "ai_prompt": "You are an expert Hindu devotional YouTube Shorts strategist. Create highly clickable Hindi metadata that matches the exact source video topic. Use emotionally strong hooks and optimize for repeat views. INSTRUCTIONS FOR GLOBAL REACH: Include a small 'English Translation' of the main hook in the description. Add 5 trending global devotional hashtags (e.g., #Spiritual #Divine #Meditation) alongside Hindi ones.",
+        "ai_prompt": "You are an expert Hindu devotional YouTube Shorts strategist. Create highly clickable Hindi metadata that matches the exact source video topic. Use emotionally strong hooks and optimize for repeat views. FOR THE HOOK_LINE: Create a 3-5 word ultra-curiosity-driven Hindi hook that forces people to stop scrolling (e.g., 'ये रहस्य जानकर दंग रह जाएंगे', 'आखिर क्यों हुआ ऐसा?', 'भगवान का साक्षात् चमत्कार'). INSTRUCTIONS FOR GLOBAL REACH: Include a small 'English Translation' of the main hook in the description. Add 5 trending global devotional hashtags (e.g., #Spiritual #Divine #Meditation) alongside Hindi ones.",
         "fallbacks": [
             {"title": "आज ये देख लो! भगवान का चमत्कार 😱🙏 #Shorts", "description": "🙏 जय श्री राम! भगवान की कृपा आप पर सदा बनी रहे।"},
             {"title": "⚠️ ये गलती कभी मत करना! महादेव देख रहे हैं 🔱 #Shorts", "description": "🔱 हर हर महादेव! शिव जी के इस रहस्य को जानिए।"},
@@ -179,7 +179,7 @@ NICHES = {
         ],
         "post_pinned_comment": True,
         "blacklist": ["face", "facecam", "selfie", "man talking", "woman talking", "person talking", "front camera"],
-        "ai_prompt": "You are a cinema expert and YouTube Shorts strategist. Create highly clickable English metadata for famous movie clips. Focus on emotional intensity and jaw-dropping moments. INSTRUCTIONS FOR GLOBAL REACH: Your metadata must appeal to a global audience. Use common cinematic terms. In the description, include short hooks in 2 other languages (e.g., Spanish/Hindi) to capture international traffic. Use high-volume global cinema hashtags.",
+        "ai_prompt": "You are a cinema expert and YouTube Shorts strategist. Create highly clickable English metadata for famous movie clips. Focus on emotional intensity and jaw-dropping moments. FOR THE HOOK_LINE: Create a 4-6 word jaw-dropping curiosity hook (e.g., 'He didn't see THIS coming...', 'The most illegal scene?', 'This changed everything'). INSTRUCTIONS FOR GLOBAL REACH: Your metadata must appeal to a global audience. Use common cinematic terms. In the description, include short hooks in 2 other languages (e.g., Spanish/Hindi) to capture international traffic. Use high-volume global cinema hashtags.",
         "fallbacks": [
             {"title": "This scene will give you chills... 🎬 #Shorts", "description": "Cinema at its absolute best. The emotion in this scene is unmatched.\n\n#MovieClips #Cinema #Epic"},
             {"title": "He didn't expect THIS to happen 😱 #Movie", "description": "One of the most intense moments in film history. Watch until the end.\n\n#Hollywood #Intense #Shorts"},
@@ -221,7 +221,7 @@ NICHES = {
         "token_secret": "YOUTUBE_TOKEN_JSON_MOTIVATION",
         "client_secret_file": "client_secret_motivation.json",
         "watermark": "@GrindMinds",
-        "ai_prompt": "You are a world-class motivational strategist. Create intense, life-changing English metadata. Focus on discipline, stoicism, and elite performance. Targeted at a global audience (US/India). Use powerful hooks that make the viewer feel like they are falling behind if they don't watch."
+        "ai_prompt": "You are a world-class motivational strategist. Create intense, life-changing English metadata. Focus on discipline, stoicism, and elite performance. FOR THE HOOK_LINE: Create a 4-6 word 'aggressive mindset' hook that targets insecurity or ambition (e.g., '99% of people fail this', 'Stop being a loser', 'The secret to 1% mindset'). Targeted at a global audience (US/India). Use powerful hooks that make the viewer feel like they are falling behind if they don't watch."
     }
 }
 

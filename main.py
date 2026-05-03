@@ -167,7 +167,8 @@ def run(niche_name, no_upload=False, cookies_path=None):
         final_video = trim_video(
             input_path=raw_video,
             output_path=final_video_path,
-            watermark=config.get("watermark", "")
+            watermark=config.get("watermark", ""),
+            hook_line=script_data.get("hook_line", "")
         )
 
     if not final_video:
