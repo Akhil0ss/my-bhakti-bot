@@ -191,8 +191,6 @@ NICHES = {
         "client_secret_file": "client_secret.json",
         "watermark": "@AKONYMOUSS"
     }
-    }
-    }
 }
 
 def get_config(niche_name):

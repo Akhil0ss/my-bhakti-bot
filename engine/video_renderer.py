@@ -5,33 +5,17 @@ import textwrap
 from datetime import datetime, timezone
 from moviepy import VideoFileClip
 
-def _write_short_clip(clip, output_path, caption_text="", watermark_text=""):
+def _write_short_clip(clip, output_path, watermark_text=""):
     """
     Writes a high-quality video using advanced FFmpeg filters for 
     upscaling, sharpening, and premium text overlays.
     """
-    # Clean and wrap caption for FFmpeg
-    clean_caption = (caption_text or "").replace("'", "").replace(":", "").strip()
-    
-    # Word Wrap logic: Split into lines of ~20 characters
-    wrapped_caption = "\n".join(textwrap.wrap(clean_caption, width=22)) if clean_caption else ""
-    # Escape newlines for FFmpeg
-    escaped_caption = wrapped_caption.replace("\n", "\r") 
-    
     ffmpeg_filters = [
         "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920",
         "unsharp=5:5:1.0:5:5:0.0", # Sharpening
         "eq=contrast=1.1:saturation=1.2", # Better colors
     ]
     
-    if escaped_caption:
-        font_path = "C\\\\:/Windows/Fonts/arialbd.ttf"
-        ffmpeg_filters.append(
-            f"drawtext=text='{escaped_caption}':fontfile='{font_path}':fontcolor=white:fontsize=48:"
-            f"borderw=2:bordercolor=black:line_spacing=10:x=(w-text_w)/2:y=h*0.15"
-        )
-    
-    # Adding Watermark/Branding at bottom-right
     if watermark_text:
         ffmpeg_filters.append(
             f"drawtext=text='{watermark_text}':fontfile='C\\\\:/Windows/Fonts/arial.ttf':"
@@ -82,7 +66,7 @@ def _find_best_hook_time(video, min_duration):
     except:
         return 0
 
-def trim_video(input_path, output_path, min_duration=30, max_duration=60, caption="", watermark=""):
+def trim_video(input_path, output_path, min_duration=30, max_duration=60, watermark=""):
     """
     Trims with Smart Hook detection and applies high-quality rendering.
     """
@@ -103,7 +87,7 @@ def trim_video(input_path, output_path, min_duration=30, max_duration=60, captio
             print(f"  [RENDER] Smart Hook detected at {start:.1f}s. Duration: {target_len:.1f}s")
             
             final_clip = video.subclipped(start, end)
-            _write_short_clip(final_clip, output_path, caption_text=caption, watermark_text=watermark)
+            _write_short_clip(final_clip, output_path, watermark_text=watermark)
             
         return output_path
     except Exception as e:
