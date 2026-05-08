@@ -4,7 +4,7 @@ import re
 from datetime import datetime, timedelta, timezone
 import requests
 import numpy as np
-from moviepy import VideoFileClip
+from moviepy.editor import VideoFileClip
 from engine.performance_tracker import get_feedback_terms, get_topic_fatigue_terms
 
 def get_history(history_file):
@@ -409,18 +409,19 @@ def download_media(
                                 max_duration_override or config.get("max_duration", 60)
                             )
                             if is_v:
-                                return {
-                                    "filepath": filepath,
-                                    "original_title": v.get("title", "Motivational Video"),
-                                    "id": v_id,
-                                    "source": "tiktok_user",
-                                    "duration": d,
-                                    "width": w,
-                                    "height": h,
-                                    "quality_score": best[0]
-                                }
-                            finally:
-                                save_history(v_id, history_file)
+                                try:
+                                    return {
+                                        "filepath": filepath,
+                                        "original_title": v.get("title", "Motivational Video"),
+                                        "id": v_id,
+                                        "source": "tiktok_user",
+                                        "duration": d,
+                                        "width": w,
+                                        "height": h,
+                                        "quality_score": best[0]
+                                    }
+                                finally:
+                                    save_history(v_id, history_file)
             except Exception as e:
                 print(f"  [WARN] User feed priority check failed for @{user}: {e}")
 

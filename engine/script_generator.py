@@ -202,8 +202,9 @@ def _enforce_title_hashtags(title, tags_str):
     cleaned = _clean_title(title)
     base_title = re.sub(r"\s*#\w+\b", "", cleaned).strip()
     mandatory = ["#shorts", "#foryou"]
-    rotated = _rotate_tags(mandatory, base_title)
-    final_title = f"{base_title} {' '.join(rotated)}".strip()
+    # Randomize the order to avoid bot detection
+    random.shuffle(mandatory)
+    final_title = f"{base_title} {' '.join(mandatory)}".strip()
     return final_title[:80].rstrip(" -|,")
 
 

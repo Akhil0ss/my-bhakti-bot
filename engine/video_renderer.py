@@ -3,7 +3,7 @@ import random
 import numpy as np
 import textwrap
 from datetime import datetime, timezone
-from moviepy import VideoFileClip
+from moviepy.editor import VideoFileClip
 
 def _write_short_clip(clip, output_path, watermark_text="", hook_text=""):
     """
