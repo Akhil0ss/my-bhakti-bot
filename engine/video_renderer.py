@@ -3,7 +3,10 @@ import random
 import numpy as np
 import textwrap
 from datetime import datetime, timezone
-from moviepy.editor import VideoFileClip
+try:
+    from moviepy.editor import VideoFileClip
+except ImportError:
+    from moviepy import VideoFileClip
 
 def _write_short_clip(clip, output_path, watermark_text="", hook_text=""):
     """
@@ -107,7 +110,10 @@ def trim_video(input_path, output_path, min_duration=30, max_duration=60, waterm
 
             print(f"  [RENDER] Smart Hook detected at {start:.1f}s. Duration: {target_len:.1f}s")
             
-            final_clip = video.subclipped(start, end)
+            if hasattr(video, 'subclipped'):
+                final_clip = video.subclipped(start, end)
+            else:
+                final_clip = video.subclip(start, end)
             _write_short_clip(final_clip, output_path, watermark_text=watermark, hook_text=hook_line)
             
         return output_path
@@ -139,7 +145,10 @@ def split_video_into_parts(input_path, output_dir, part_min_duration=35, part_ma
                     part_duration = remaining
 
                 end = start + part_duration
-                clip = video.subclipped(start, end)
+                if hasattr(video, 'subclipped'):
+                    clip = video.subclipped(start, end)
+                else:
+                    clip = video.subclip(start, end)
                 output_path = os.path.join(output_dir, f"{batch_id}_part_{part_index}.mp4")
                 
                 # Using part of the source title as hook for parts

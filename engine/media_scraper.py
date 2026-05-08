@@ -4,7 +4,10 @@ import re
 from datetime import datetime, timedelta, timezone
 import requests
 import numpy as np
-from moviepy.editor import VideoFileClip
+try:
+    from moviepy.editor import VideoFileClip
+except ImportError:
+    from moviepy import VideoFileClip
 from engine.performance_tracker import get_feedback_terms, get_topic_fatigue_terms
 
 def get_history(history_file):
