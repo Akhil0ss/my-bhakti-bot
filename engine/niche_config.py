@@ -209,19 +209,33 @@ NICHES = {
         "query_modifiers": [
             "cinematic", "viral 2026", "global trend", "4k edit", "epic", "mindset", "hustle"
         ],
-        "min_likes": 1000,
-        "min_views": 10000,
+        "min_likes": 500,
+        "min_views": 5000,
         "min_duration": 30,
         "max_duration": 65,
-        "max_age_days": 180,
-        "preferred_hours_ist": [10, 16, 20, 0, 4],
-        "default_language": "en",
-        "default_audio_language": "en",
+        "series_formats": [
+            "Grind Minds Elite",
+            "Stoic Wisdom",
+            "1% Mindset",
+            "Daily Discipline"
+        ],
+        "comment_templates": [
+            "🔥 Comment 'GRIND' if you are part of the 1%.",
+            "🧠 Drop a 'STREAK' if you stayed disciplined today.",
+            "🚀 Share this with someone who needs to wake up."
+        ],
+        "post_pinned_comment": True,
+        "history_file": "download_history_motivation.txt",
         "token_file": "token_motivation.json",
         "token_secret": "YOUTUBE_TOKEN_JSON_MOTIVATION",
         "client_secret_file": "client_secret_motivation.json",
         "watermark": "@GrindMinds",
-        "ai_prompt": "You are a world-class motivational strategist. Create intense, life-changing English metadata. Focus on discipline, stoicism, and elite performance. FOR THE HOOK_LINE: Create a 4-6 word 'aggressive mindset' hook that targets insecurity or ambition (e.g., '99% of people fail this', 'Stop being a loser', 'The secret to 1% mindset'). Targeted at a global audience (US/India). Use powerful hooks that make the viewer feel like they are falling behind if they don't watch."
+        "fallbacks": [
+            {"title": "Stop wasting your time. 🛑 #Shorts", "description": "Every second counts. Build the life you want.\n\n#Motivation #Discipline #Grind"},
+            {"title": "The 1% mindset secret 🧠 #Success", "description": "This is what separates the winners from the rest.\n\n#Mindset #Stoic #Shorts"},
+            {"title": "Stay disciplined when nobody is watching 🔱 #Grind", "description": "The work you do in the dark puts you in the light.\n\n#HardWork #Elite #Shorts"}
+        ],
+        "ai_prompt": "You are a world-class motivational strategist. Create intense, life-changing English metadata. Focus on discipline, stoicism, and elite performance. FOR THE HOOK_LINE: Create a 4-6 word 'aggressive mindset' hook that targets insecurity or ambition (e.g., '99% of people fail this', 'Stop being a loser', 'The secret to 1% mindset'). Targeted at a global audience (US/India). Use powerful hooks that make the viewer feel like they are falling behind if they don't watch. Add 5 trending global mindset hashtags."
     }
 }
 

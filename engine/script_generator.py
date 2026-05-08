@@ -21,6 +21,12 @@ HOOKS = {
         "✨ Subscribe for more iconic movie moments!",
         "😱 Did you expect this to happen? Let us know in the comments!",
         "🔥 Share this with a movie buff!"
+    ],
+    "motivation": [
+        "🔥 Comment 'GRIND' if you are part of the 1%!",
+        "🧠 Drop a 'STREAK' if you stayed disciplined today!",
+        "🚀 Tag someone who needs to see this!",
+        "🔱 Subscribe to join the elite mindset."
     ]
 }
 
@@ -35,6 +41,10 @@ TREND_TAGS = {
     "akonymous": [
         "#shorts", "#foryou", "#viral", "#trending", "#movieclips", "#cinema",
         "#hollywood", "#bestscenes", "#film", "#movie", f"#{TREND_MONTH_TOKEN}"
+    ],
+    "motivation": [
+        "#shorts", "#foryou", "#viral", "#trending", "#motivation", "#mindset",
+        "#stoicism", "#success", "#discipline", "#grind", f"#{TREND_MONTH_TOKEN}"
     ],
 }
 
@@ -275,9 +285,13 @@ def _generate_with_groq(prompt, niche):
 
 def generate_rewrite_and_quote(original_title, config):
     """Generates niche-specific viral metadata."""
-    # Identify niche (default to bhakti if not found)
-    hist_file = config.get("history_file", "bhakti")
-    niche = "akonymous" if "akonymous" in hist_file.lower() else "bhakti"
+    hist_file = config.get("history_file", "bhakti").lower()
+    if "akonymous" in hist_file:
+        niche = "akonymous"
+    elif "motivation" in hist_file:
+        niche = "motivation"
+    else:
+        niche = "bhakti"
     
     engagement_hook = random.choice(HOOKS.get(niche, HOOKS["bhakti"]))
     series_label = _pick_series_format(config, original_title)

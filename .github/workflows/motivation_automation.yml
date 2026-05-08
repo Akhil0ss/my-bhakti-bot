@@ -28,11 +28,29 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg
 
-      - name: Run Motivation Bot
-        env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          YOUTUBE_TOKEN_JSON_MOTIVATION: ${{ secrets.YOUTUBE_TOKEN_JSON_MOTIVATION }}
+      - name: Setup Secrets
         run: |
-          echo "$YOUTUBE_TOKEN_JSON_MOTIVATION" > token_motivation.json
-          python main.py --niche motivation
+          echo "GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}" > .env
+          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
+          echo '${{ secrets.YOUTUBE_TOKEN_JSON_MOTIVATION }}' > token_motivation.json
+
+      - name: Restore Cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            download_history_motivation.txt
+            strategy_data
+          key: history-motivation-${{ github.run_id }}
+          restore-keys: history-motivation-
+
+      - name: Run Motivation Bot
+        run: python main.py --niche motivation
+
+      - name: Save Cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            download_history_motivation.txt
+            strategy_data
+          key: history-motivation-${{ github.run_id }}

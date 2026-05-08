@@ -15,6 +15,16 @@ def _write_short_clip(clip, output_path, watermark_text="", hook_text=""):
         "eq=contrast=1.1:saturation=1.2", # Better colors
     ]
     
+    # Determine font path based on OS
+    if os.name == 'nt':
+        font_path = 'C\\\\:/Windows/Fonts/arial.ttf'
+    else:
+        # Common path on Ubuntu
+        font_path = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
+        # Fallback if the specific path doesn't exist
+        if not os.path.exists(font_path):
+            font_path = 'sans'
+
     # Hook Line Overlay (Forced Thumbnail)
     if hook_text:
         # Sanitize for FFmpeg drawtext
@@ -22,14 +32,14 @@ def _write_short_clip(clip, output_path, watermark_text="", hook_text=""):
         # Wrap text to avoid overflow (safer width for Square/Vertical)
         wrapped_hook = "\\\n".join(textwrap.wrap(safe_hook, width=15))
         ffmpeg_filters.append(
-            f"drawtext=text='{wrapped_hook}':fontfile='C\\\\:/Windows/Fonts/arial.ttf':"
+            f"drawtext=text='{wrapped_hook}':fontfile='{font_path}':"
             f"fontcolor=yellow:fontsize=60:box=1:boxcolor=black@0.6:boxborderw=10:"
             f"x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t,0,0.8)'"
         )
 
     if watermark_text:
         ffmpeg_filters.append(
-            f"drawtext=text='{watermark_text}':fontfile='C\\\\:/Windows/Fonts/arial.ttf':"
+            f"drawtext=text='{watermark_text}':fontfile='{font_path}':"
             f"fontcolor=white@0.4:fontsize=32:x=w-text_w-40:y=h-text_h-40"
         )
 

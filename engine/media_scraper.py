@@ -309,6 +309,44 @@ def _select_candidate_from_keyword(
     return candidates
 
 
+def _process_raw_candidates(
+    videos, keyword, config, history, feedback_terms, fatigue_terms,
+    min_likes, min_views, min_duration, max_duration, min_topic_score
+):
+    blacklist = config.get("blacklist", [])
+    candidates = []
+    for v in videos:
+        v_id = v.get("video_id") or v.get("id")
+        title = v.get("title", "").lower()
+        likes = int(v.get("digg_count", 0))
+        views = int(v.get("play_count", 0))
+        duration = _to_float(v.get("duration"), default=0)
+        width = int(_to_float(v.get("width"), default=0))
+        height = int(_to_float(v.get("height"), default=0))
+        is_recent, published_at = _within_recent_window(v, config.get("max_age_days", 30))
+
+        if not v_id or v_id in history:
+            continue
+        if not is_recent:
+            continue
+        if any(word in title for word in blacklist):
+            continue
+        if likes < min_likes or views < min_views:
+            continue
+        if duration and not (duration >= min_duration and (max_duration is None or duration <= max_duration)):
+            continue
+        if width and height and not _is_valid_aspect_ratio(width, height):
+            continue
+
+        score, topic_score = _score_video(v, keyword, config, feedback_terms, fatigue_terms)
+        if topic_score < min_topic_score:
+            continue
+        candidates.append((score, topic_score, v, duration, likes, views, published_at))
+
+    candidates.sort(key=lambda item: item[0], reverse=True)
+    return candidates
+
+
 def download_media(
     config,
     output_dir="output",
@@ -321,7 +359,14 @@ def download_media(
     os.makedirs(output_dir, exist_ok=True)
     history_file = config.get("history_file", "downloaded.txt")
     history = get_history(history_file)
-    niche = "akonymous" if "akonymous" in history_file.lower() else "bhakti"
+    
+    if "akonymous" in history_file.lower():
+        niche = "akonymous"
+    elif "motivation" in history_file.lower():
+        niche = "motivation"
+    else:
+        niche = "bhakti"
+        
     feedback_terms = get_feedback_terms(niche)
     fatigue_terms = get_topic_fatigue_terms(niche)
     
@@ -374,6 +419,8 @@ def download_media(
                                     "height": h,
                                     "quality_score": best[0]
                                 }
+                            finally:
+                                save_history(v_id, history_file)
             except Exception as e:
                 print(f"  [WARN] User feed priority check failed for @{user}: {e}")
 
