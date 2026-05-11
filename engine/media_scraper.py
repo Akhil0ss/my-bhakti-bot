@@ -46,8 +46,8 @@ def _validate_downloaded_video(filepath, min_duration, max_duration=None):
         # Quality check: Bytes per second (Bitrate estimation)
         file_size = os.path.getsize(filepath)
         bytes_per_second = file_size / max(duration, 0.1)
-        # We want at least 150KB/s (approx 1.2Mbps) for decent quality
-        is_high_quality = bytes_per_second > 150000 
+        # Relaxed from 150KB/s to 80KB/s to allow more videos
+        is_high_quality = bytes_per_second > 80000 
         
         rejection_reason = None
         if not _is_valid_aspect_ratio(width, height):
@@ -442,14 +442,14 @@ def download_media(
             "min_topic_score": config.get("min_topic_score", 1),
         },
         {
-            "min_likes": max(500, int(config.get("min_likes", 500) * 0.6)),
-            "min_views": max(5000, int(config.get("min_views", 5000) * 0.6)),
-            "min_topic_score": max(1, config.get("min_topic_score", 1) - 1),
+            "min_likes": max(100, int(config.get("min_likes", 500) * 0.5)),
+            "min_views": max(1000, int(config.get("min_views", 5000) * 0.5)),
+            "min_topic_score": max(0, config.get("min_topic_score", 1) - 1),
         },
         {
-            "min_likes": 200,
-            "min_views": 2000,
-            "min_topic_score": 1,
+            "min_likes": 50,
+            "min_views": 500,
+            "min_topic_score": 0,
         },
     ]
     random.shuffle(search_pool)
@@ -514,7 +514,7 @@ def download_media(
                     continue
 
                 quality = _sample_visual_quality(filepath)
-                if quality["quality_score"] < 16:
+                if quality["quality_score"] < 10:
                     print(
                         f"  [WARN] Rejected downloaded file due to very weak visual quality (score={quality['quality_score']:.1f}, hook_motion={quality['first_hook_motion']:.1f})."
                     )
@@ -531,7 +531,7 @@ def download_media(
                     )
 
                 human_risk = _human_presence_risk(filepath)
-                if human_risk > 1.25:
+                if human_risk > 1.8:
                     print(
                         f"  [WARN] Rejected downloaded file because it looks like face-led / human-present content (risk={human_risk:.2f})."
                     )

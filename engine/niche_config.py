@@ -212,10 +212,12 @@ NICHES = {
         "query_modifiers": [
             "cinematic", "viral 2026", "global trend", "4k edit", "epic", "mindset", "hustle"
         ],
-        "min_likes": 500,
-        "min_views": 5000,
+        "min_likes": 200,
+        "min_views": 2000,
         "min_duration": 30,
         "max_duration": 65,
+        "max_age_days": 90,
+        "min_topic_score": 1,
         "series_formats": [
             "Grind Minds Elite",
             "Stoic Wisdom",
