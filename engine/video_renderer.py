@@ -37,20 +37,18 @@ def _render_with_ffmpeg(input_path, output_path, start_time, duration, watermark
     # 2. Build Video Filters (Resolution Independent)
     vf_chain = [
         f"setpts={1/speed}*PTS",
-        # Scale to standard shorts size first to ensure crop works on any input
-        "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920",
-        # Random edge crop (1-2%)
-        f"crop=iw*0.98:ih*0.98:iw*0.01:ih*0.01",
+        # Initial standard scaling
+        "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1",
+        # Random edge crop (1-2%) - We scale back immediately to keep resolution stable
+        f"crop=iw*0.98:ih*0.98:iw*0.01:ih*0.01,scale=1080:1920",
         # Color & Hue
         f"eq=brightness={bright}:contrast={cont}:saturation={sat},hue=h={hue}",
-        # Micro rotation
-        f"rotate={rot}*PI/180:fillcolor=black:ow=iw:oh=ih",
-        # Subtle Zoom & Re-scale
-        f"scale=iw*{zoom}:ih*{zoom},crop=1080:1920",
-        # Grain/Noise
-        "noise=c0s=2:c0f=t+u",
-        # FPS and Sharpening
-        f"fps={fps},unsharp=5:5:0.8:5:5:0.0"
+        # Micro rotation & scale back to avoid black edges
+        f"rotate={rot}*PI/180:fillcolor=black:ow=iw:oh=ih,scale=1080:1920",
+        # Subtle Zoom & Final Force Scale
+        f"scale=iw*{zoom}:ih*{zoom},scale=1080:1920,crop=1080:1920",
+        # Grain/Noise, FPS and Sharpening
+        f"noise=c0s=2:c0f=t+u,fps={fps},unsharp=5:5:0.8:5:5:0.0"
     ]
 
     # Add Hook Text
