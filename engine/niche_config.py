@@ -1,4 +1,5 @@
 import random
+import os
 
 NICHES = {
     "bhakti": {
@@ -91,7 +92,8 @@ NICHES = {
         "search_timeout_seconds": 25,
         "download_timeout_seconds": 50,
         "min_topic_score": 1,
-        "preferred_hours_ist": [5, 8, 12, 18, 21],
+        "preferred_hours_ist": [7, 13, 19],
+        "drive_folder_id": os.getenv("DRIVE_FOLDER_ID_BHAKTI"),
         "default_language": "hi",
         "default_audio_language": "hi",
         "series_formats": [
@@ -163,7 +165,8 @@ NICHES = {
         "search_timeout_seconds": 20,
         "download_timeout_seconds": 45,
         "min_topic_score": 2,
-        "preferred_hours_ist": [10, 14, 17, 20, 23],
+        "preferred_hours_ist": [11, 18, 2],
+        "drive_folder_id": os.getenv("DRIVE_FOLDER_ID_AKONYMOUS"),
         "default_language": "en",
         "default_audio_language": "en",
         "series_formats": [
@@ -230,6 +233,8 @@ NICHES = {
         "token_secret": "YOUTUBE_TOKEN_JSON_MOTIVATION",
         "client_secret_file": "client_secret_motivation.json",
         "watermark": "@GrindMinds",
+        "preferred_hours_ist": [9, 17, 1],
+        "drive_folder_id": os.getenv("DRIVE_FOLDER_ID_MOTIVATION"),
         "fallbacks": [
             {"title": "Stop wasting your time. 🛑 #Shorts", "description": "Every second counts. Build the life you want.\n\n#Motivation #Discipline #Grind"},
             {"title": "The 1% mindset secret 🧠 #Success", "description": "This is what separates the winners from the rest.\n\n#Mindset #Stoic #Shorts"},

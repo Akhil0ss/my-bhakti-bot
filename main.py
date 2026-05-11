@@ -4,6 +4,7 @@ import sys
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 from engine.media_scraper import download_media
+from engine.drive_fetcher import download_from_drive
 from engine.script_generator import generate_rewrite_and_quote
 from engine.video_renderer import trim_video, split_video_into_parts
 from engine.youtube_uploader import get_authenticated_service, upload_video
@@ -53,6 +54,7 @@ def run(niche_name, no_upload=False, cookies_path=None):
     print("==================================================")
     print(f"  AURA ENGINE - {niche_name.upper()} Mode")
     print("==================================================\n")
+    youtube = None
     try:
         youtube = get_authenticated_service(
             token_file=config["token_file"],
@@ -61,7 +63,7 @@ def run(niche_name, no_upload=False, cookies_path=None):
         )
         sync_recent_video_stats(niche_name, youtube)
     except Exception as analytics_err:
-        print(f"  [STRATEGY] Stats sync skipped: {analytics_err}")
+        print(f"  [STRATEGY] Auth/Stats sync failed: {analytics_err}")
     recommended_hours = get_recommended_hours_ist(
         niche_name,
         default_hours=config.get("preferred_hours_ist", []),
@@ -98,26 +100,49 @@ def run(niche_name, no_upload=False, cookies_path=None):
             print(f"  [ERROR] Scheduled upload failed: {e}")
             return
 
-    # Step 1: Scrape Viral Video
-    print(f"[1/4] Scraping viral {niche_name} clip...")
+    # Step 1: Sourcing Video (Drive First -> Scraper Fallback)
+    print(f"[1/4] Sourcing {niche_name} video...")
     scraped_data = None
-    if niche_name.lower() == "bhakti" and config.get("enable_segment_queue", False):
-        print("  [INFO] Trying long-source queue mode for Bhakti before regular single-short mode...")
-        scraped_data = download_media(
-            config=config,
-            output_dir=OUTPUT_DIR,
-            cookies_path=cookies_path,
-            min_duration_override=config.get("queue_min_source_duration", 70),
-            max_duration_override=None,
-            query_limit_override=config.get("queue_search_queries", 24),
-        )
-    if not scraped_data or not scraped_data.get("filepath"):
-        scraped_data = download_media(config=config, output_dir=OUTPUT_DIR, cookies_path=cookies_path)
-    if not scraped_data or not scraped_data.get("filepath"):
-        print(f"  [SKIP] No usable {niche_name} video found in this run. Exiting without failure.")
-        return
+    raw_video = None
+    
+    # Try Public Drive first if configured
+    drive_id = config.get("drive_folder_id")
+    if drive_id:
+        for attempt in range(2):
+            print(f"  [DRIVE] Attempt {attempt+1}/2...")
+            history_file = f"download_history_{niche_name}.txt"
+            raw_video = download_from_drive(drive_id, os.path.join(OUTPUT_DIR, "raw_video.mp4"), history_file)
+            if raw_video:
+                scraped_data = {
+                    "filepath": raw_video,
+                    "original_title": f"{niche_name.capitalize()} Special Video",
+                    "id": "drive_" + datetime.now().strftime("%H%M%S"),
+                    "quality_score": 10.0
+                }
+                break
+        if not raw_video:
+            print("  [WARN] Drive fetch failed after 2 attempts. Falling back to Scraper...")
+
+    # Fallback to Scraper (TikTok/YT) if Drive failed or was not configured
+    if not raw_video:
+        if niche_name.lower() == "bhakti" and config.get("enable_segment_queue", False):
+            print("  [INFO] Trying long-source queue mode for Bhakti before regular single-short mode...")
+            scraped_data = download_media(
+                config=config,
+                output_dir=OUTPUT_DIR,
+                cookies_path=cookies_path,
+                min_duration_override=config.get("queue_min_source_duration", 70),
+                max_duration_override=None,
+                query_limit_override=config.get("queue_search_queries", 24),
+            )
+        if not scraped_data or not scraped_data.get("filepath"):
+            scraped_data = download_media(config=config, output_dir=OUTPUT_DIR, cookies_path=cookies_path)
         
-    raw_video = scraped_data["filepath"]
+        if not scraped_data or not scraped_data.get("filepath"):
+            print(f"  [SKIP] No usable {niche_name} video found. Exiting.")
+            return
+        raw_video = scraped_data["filepath"]
+
     original_title = scraped_data["original_title"]
 
     # Step 2: Generate SEO Title & Tags
