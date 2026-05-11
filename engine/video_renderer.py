@@ -65,7 +65,7 @@ def _render_with_ffmpeg(input_path, output_path, start_time, duration, watermark
     if watermark_text:
         vf_chain.append(
             f"drawtext=text='{watermark_text}':fontfile='{font_path}':"
-            f"fontcolor=white@0.4:fontsize=32:x=(w-text_w)/2:y=h*0.7"
+            f"fontcolor=white@0.8:fontsize=48:x=(w-text_w)/2:y=h*0.7"
         )
 
     # 3. Build Audio Filters

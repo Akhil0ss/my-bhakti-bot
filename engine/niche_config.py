@@ -109,11 +109,11 @@ NICHES = {
         ],
         "post_pinned_comment": True,
         "blacklist": ["face", "facecam", "selfie", "man talking", "woman talking", "person talking", "front camera"],
-        "ai_prompt": "You are an expert Hindu devotional YouTube Shorts strategist. Create highly clickable Hindi metadata that matches the exact source video topic. Use emotionally strong hooks and optimize for repeat views. FOR THE HOOK_LINE: Create a 3-5 word ultra-curiosity-driven Hindi hook that forces people to stop scrolling (e.g., 'ये रहस्य जानकर दंग रह जाएंगे', 'आखिर क्यों हुआ ऐसा?', 'भगवान का साक्षात् चमत्कार'). INSTRUCTIONS FOR GLOBAL REACH: Include a small 'English Translation' of the main hook in the description. Add 5 trending global devotional hashtags (e.g., #Spiritual #Divine #Meditation) alongside Hindi ones.",
+        "ai_prompt": "You are an expert Hindu devotional YouTube Shorts strategist. Create highly clickable metadata in ROMANIZED HINDI (English script/alphabet) that matches the exact source video topic. Use emotionally strong hooks and optimize for repeat views. FOR THE HOOK_LINE: Create a 3-5 word ultra-curiosity-driven hook in ROMANIZED HINDI (e.g., 'Ye rahasya जानकर dang reh jayenge', 'Aakhir kyon hua aisa?', 'Bhagwan ka chamatkar'). DO NOT USE HINDI SCRIPT. USE ONLY ENGLISH ALPHABETS. INSTRUCTIONS FOR GLOBAL REACH: Metadata must be in Romanized Hindi/English to appeal to a global audience. Add 5 trending global devotional hashtags (e.g., #Spiritual #Divine #Meditation).",
         "fallbacks": [
-            {"title": "आज ये देख लो! भगवान का चमत्कार 😱🙏 #Shorts", "description": "🙏 जय श्री राम! भगवान की कृपा आप पर सदा बनी रहे।"},
-            {"title": "⚠️ ये गलती कभी मत करना! महादेव देख रहे हैं 🔱 #Shorts", "description": "🔱 हर हर महादेव! शिव जी के इस रहस्य को जानिए।"},
-            {"title": "भगवान कृष्ण का ये संदेश आपका जीवन बदल देगा 🤯🕉️ #Shorts", "description": "💛 राधे राधे! श्री कृष्ण की अनमोल वाणी।"}
+            {"title": "Aaj ye dekh lo! Bhagwan ka chamatkar 😱🙏 #Shorts", "description": "🙏 Jai Shri Ram! Bhagwan ki kripa aap par sada bani rahe."},
+            {"title": "⚠️ Ye galti kabhi mat karna! Mahadev dekh rahe hain 🔱 #Shorts", "description": "🔱 Har Har Mahadev! Shiv ji ke is rahasya ko jaaniye."},
+            {"title": "Bhagwan Krishna ka ye sandesh aapka jeevan badal dega 🤯🕉️ #Shorts", "description": "💛 Radhe Radhe! Shri Krishna ki anmol vaani."}
         ],
         "history_file": "download_history_bhakti.txt",
         "token_file": "token_bhakti.json",

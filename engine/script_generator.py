@@ -11,10 +11,10 @@ load_dotenv()
 # Niche-specific engagement hooks
 HOOKS = {
     "bhakti": [
-        "🙏 कमेंट में लिखो 'जय श्री राम'!",
-        "🔱 टाइप करो 'ॐ नमः शिवाय'!",
-        "💛 'राधे राधे' लिखो कमेंट में!",
-        "🕉️ 'हर हर महादेव' टाइप करो — शिव जी की कृपा बरसेगी!"
+        "🙏 Comment mein likho 'Jai Shri Ram'!",
+        "🔱 Type karo 'Om Namah Shivay'!",
+        "💛 'Radhe Radhe' likho comment mein!",
+        "🕉️ 'Har Har Mahadev' type karo — Shiv ji ki kripa barsegi!"
     ],
     "akonymous": [
         "🎬 Comment your favorite movie if you loved this!",
