@@ -34,21 +34,20 @@ def _render_with_ffmpeg(input_path, output_path, start_time, duration, watermark
         font_path = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
         if not os.path.exists(font_path): font_path = 'sans'
 
-    # 2. Build Video Filters (Resolution Independent)
+    # 2. Build Video Filters (Resolution Independent & Optimized)
     vf_chain = [
         f"setpts={1/speed}*PTS",
-        # Initial standard scaling
+        # Combined Initial scaling and crop to 1080:1920
         "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1",
-        # Random edge crop (1-2%) - We scale back immediately to keep resolution stable
-        f"crop=iw*0.98:ih*0.98:iw*0.01:ih*0.01,scale=1080:1920",
+        # Random edge crop (1-2%) and rotation in one pass if possible, or sequential but minimized
+        f"crop=iw*0.97:ih*0.97:iw*0.015:ih*0.015",
+        f"rotate={rot}*PI/180:fillcolor=black:ow=iw:oh=ih",
         # Color & Hue
         f"eq=brightness={bright}:contrast={cont}:saturation={sat},hue=h={hue}",
-        # Micro rotation & scale back to avoid black edges
-        f"rotate={rot}*PI/180:fillcolor=black:ow=iw:oh=ih,scale=1080:1920",
-        # Subtle Zoom & Final Force Scale
-        f"scale=iw*{zoom}:ih*{zoom},scale=1080:1920,crop=1080:1920",
-        # Grain/Noise, FPS and Sharpening
-        f"noise=c0s=2:c0f=t+u,fps={fps},unsharp=5:5:0.8:5:5:0.0"
+        # Final Scale back to 1080:1920 after rotation/crop
+        f"scale=1080:1920",
+        # Grain/Noise and Sharpening (Lighter)
+        f"noise=c0s=1:c0f=t+u,fps={fps},unsharp=3:3:0.5:3:3:0.0"
     ]
 
     # Add Hook Text
@@ -184,18 +183,29 @@ def split_video_into_parts(input_path, output_dir, part_min_duration=35, part_ma
         return []
 
 def _find_best_hook_time(video, min_duration):
-    """Analyzes the video to find high motion segment."""
+    """
+    Optimized motion detection: 
+    1. Increases sample step.
+    2. Limits search range to first 5 minutes.
+    3. Prevents excessive decoding.
+    """
     try:
         duration = video.duration
         if duration < min_duration: return 0
-        sample_step = 2
+        
+        # Only search in the first 5 minutes (300s) as hooks belong at the start
+        search_limit = min(duration - min_duration, 300)
+        sample_step = 6  # Increased from 2 to 6 for 3x speedup
+        
         best_time, max_motion = 0, 0
-        for t in range(0, int(duration - min_duration), sample_step):
+        for t in range(0, int(search_limit), sample_step):
+            # Sampling frames is expensive, so we do it sparingly
             f1 = video.get_frame(t).mean()
-            f2 = video.get_frame(t + 0.5).mean()
+            f2 = video.get_frame(t + 0.3).mean() # Faster delta
             motion = abs(f2 - f1)
             if motion > max_motion:
                 max_motion = motion
                 best_time = t
         return best_time
-    except: return 0
+    except Exception:
+        return 0

@@ -140,27 +140,34 @@ def upload_video(
     request = youtube.videos().insert(part="snippet,status", body=body, media_body=media)
 
     print(f"  Starting YouTube upload for '{title[:50]}'...")
-    response = None
     
-    while response is None:
+    for attempt in range(1, 4):
+        print(f"  [UPLOAD] Attempt {attempt}/3...")
+        # Re-create media and request for each attempt to be safe
+        media = MediaFileUpload(video_path, mimetype="video/mp4", resumable=True, chunksize=1024*1024)
+        request = youtube.videos().insert(part="snippet,status", body=body, media_body=media)
+        
+        response = None
         try:
-            status, response = request.next_chunk()
-            if status:
-                pct = int(status.progress() * 100)
-                print(f"  Upload {pct}% complete...")
+            while response is None:
+                status, response = request.next_chunk()
+                if status:
+                    pct = int(status.progress() * 100)
+                    print(f"  Upload {pct}% complete...")
+            
+            if response:
+                video_id = response.get("id", "unknown")
+                video_url = f"https://youtube.com/shorts/{video_id}"
+                print(f"  [OK] Successfully uploaded! Link: {video_url}")
+                if enable_pinned_comment:
+                    post_pinned_comment(youtube, video_id, comment_text=pinned_comment_text)
+                return video_id
+                
         except Exception as e:
-            print(f"  [ERROR] Upload paused or failed! Retrying... {e}")
-            break
-
-    if response:
-        video_id = response.get("id", "unknown")
-        video_url = f"https://youtube.com/shorts/{video_id}"
-        print(f"  [OK] Successfully uploaded! Link: {video_url}")
-        if enable_pinned_comment:
-            post_pinned_comment(youtube, video_id, comment_text=pinned_comment_text)
-        
-        return video_id
-        
+            print(f"  [ERROR] Upload attempt {attempt} failed: {e}")
+            if attempt == 3:
+                print("  [FATAL] All upload attempts failed.")
+    
     return None
 
 if __name__ == "__main__":

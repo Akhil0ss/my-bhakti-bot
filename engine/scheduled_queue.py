@@ -52,10 +52,19 @@ def remove_queue_item(niche, queue_id):
 
 
 def cleanup_missing_files(niche):
+    """
+    Relaxed cleanup: Only logs missing files instead of deleting from queue.
+    Prevents automatic cancellation of schedules due to temporary filesystem lag.
+    """
     queue = load_queue(niche)
-    filtered = [item for item in queue if os.path.exists(item.get("video_path", ""))]
-    if len(filtered) != len(queue):
-        save_queue(niche, filtered)
+    missing_count = 0
+    for item in queue:
+        if not os.path.exists(item.get("video_path", "")):
+            missing_count += 1
+            print(f"  [WARN] Queue item {item.get('queue_id')} video file missing: {item.get('video_path')}")
+    
+    if missing_count > 0:
+        print(f"  [INFO] Found {missing_count} items with missing files. They remain in queue for manual recovery or later retry.")
 
 
 def _next_slot_after(now_utc, preferred_hours_ist, step_index):
