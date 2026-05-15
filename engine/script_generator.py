@@ -111,9 +111,9 @@ def _clean_tags(tags, original_title, niche):
     for fallback_tag in fallback_tags:
         if fallback_tag not in cleaned:
             cleaned.append(fallback_tag)
-        if len(cleaned) >= 10:
+        if len(cleaned) >= 30:
             break
-    return " ".join(cleaned[:10])
+    return " ".join(cleaned[:30])
 
 
 def _score_title(title, original_title):
@@ -217,13 +217,13 @@ def _enforce_description_hashtags(description, tags_str, engagement_hook, series
     for tag in tag_list:
         if tag not in curated:
             curated.append(tag)
-        if len(curated) >= 10:
+        if len(curated) >= 20:
             break
-    while len(curated) < 10:
+    while len(curated) < 20:
         for fallback_tag in _build_fallback_tags(original_title, niche).split():
             if fallback_tag not in curated:
                 curated.append(fallback_tag)
-            if len(curated) >= 10:
+            if len(curated) >= 20:
                 break
 
     if engagement_hook and engagement_hook not in description:
@@ -232,7 +232,7 @@ def _enforce_description_hashtags(description, tags_str, engagement_hook, series
         description = f"{description}\nSeries: {series_label}".strip()
 
     description_no_tags = re.sub(r"(?:\n|\s)*(#\w+\s*)+$", "", description).strip()
-    return f"{description_no_tags}\n\n{' '.join(curated[:10])}".strip()
+    return f"{description_no_tags}\n\n{' '.join(curated[:20])}".strip()
 
 
 def _generate_with_groq(prompt, niche):
