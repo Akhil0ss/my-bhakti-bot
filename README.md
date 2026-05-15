@@ -1,17 +1,21 @@
-# Aura Shorts Engine
+# Aura Shorts Engine: 2026 Ultra-Pro Edition
 
-A fully automated YouTube Shorts building and uploading engine.
+**Aura Shorts Engine** is a high-performance, automated YouTube Shorts growth engine powered by Google Gemini and Edge-TTS.
 
-## Features
-- Generates a script via Google Gemini (Free tier)
-- Generates speech via Edge-TTS (Free)
-- Fetches HD Background video clips via Pexels API (Free)
-- Stitches the video, edits and generates VTT captions via MoviePy
-- Uploads directly to YouTube via YouTube API.
+## 🚀 Key Upgrades (May 2026)
+- **6-Slot Global Automation**: Optimized for IST (Bhakti) and Global (Akonymous/Motivation) peak timings.
+- **Ultra-Pro SEO Mode**: Curiosity-driven titles, semantic descriptions, and 20+ trending hashtags/tags for maximum reach.
+- **11-Layer DNA Fingerprinting**: Every video is re-rendered with unique digital signatures to bypass AI detection and copyright filters.
+- **Zero Buffer Logic**: Instant execution from scraping to upload, optimized for GitHub Actions performance.
+- **Consolidated Workflow**: Single workflow file managing multiple niches dynamically.
 
-## Setup
-1. Duplicate `.env.example` to `.env` and fill the keys.
-2. `pip install -r requirements.txt`
-3. Download `client_secret.json` from Google Cloud Console matching your YouTube Content Owner/Channel APIs.
-4. Run `python main.py` for testing. First run will prompt Google OAuth Login.
-5. Setup GitHub Actions with Repository Secrets to deploy this as an autonomous script 24/7.
+## 🔒 Proprietary Logic
+This project contains proprietary rendering and SEO logic. All rights reserved under the [LICENSE](LICENSE).
+
+## 🛠 Setup
+1. Fill `.env` with API keys (Gemini, Groq, etc.).
+2. Add YouTube tokens as GitHub Secrets.
+3. Push to GitHub and let the 6-slot automation run 24/7.
+
+---
+**Maintained by Akonymouss (2026)**
