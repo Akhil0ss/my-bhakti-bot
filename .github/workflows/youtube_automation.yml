@@ -1,13 +1,25 @@
-name: YouTube Automation (6-Slot Daily)
+name: YouTube Automation (12-Slot Daily)
 
 on:
   schedule:
-    - cron: '30 2 * * *'    # 08:00 AM IST [BHAKTI]
-    - cron: '30 5 * * *'    # 11:00 AM IST [AKONYMOUS]
-    - cron: '30 7 * * *'    # 01:00 PM IST [MOTIVATION]
-    - cron: '30 10 * * *'   # 04:00 PM IST [AKONYMOUS - GLOBAL PEAK]
-    - cron: '30 14 * * *'   # 08:00 PM IST [BHAKTI]
-    - cron: '30 17 * * *'   # 11:00 PM IST [MOTIVATION - GLOBAL PEAK]
+    # --- BHAKTI (IST Focused) ---
+    - cron: '30 1 * * *'    # 07:00 AM IST
+    - cron: '30 5 * * *'    # 11:00 AM IST
+    - cron: '30 10 * * *'   # 04:00 PM IST
+    - cron: '30 14 * * *'   # 08:00 PM IST
+    
+    # --- AKONYMOUS (Global) ---
+    - cron: '30 3 * * *'    # 09:00 AM IST
+    - cron: '30 8 * * *'    # 02:00 PM IST
+    - cron: '30 13 * * *'   # 07:00 PM IST
+    - cron: '30 18 * * *'   # 12:00 AM IST
+    
+    # --- MOTIVATION (Global) ---
+    - cron: '30 4 * * *'    # 10:00 AM IST
+    - cron: '30 9 * * *'    # 03:00 PM IST
+    - cron: '30 15 * * *'   # 09:00 PM IST
+    - cron: '30 20 * * *'   # 02:00 AM IST
+
   workflow_dispatch:
     inputs:
       niche:
@@ -45,12 +57,9 @@ jobs:
             echo "NICHE=${{ github.event.inputs.niche }}" >> $GITHUB_ENV
           else
             case "${{ github.event.schedule }}" in
-              "30 2 * * *") echo "NICHE=bhakti" >> $GITHUB_ENV ;;
-              "30 5 * * *") echo "NICHE=akonymous" >> $GITHUB_ENV ;;
-              "30 7 * * *") echo "NICHE=motivation" >> $GITHUB_ENV ;;
-              "30 10 * * *") echo "NICHE=akonymous" >> $GITHUB_ENV ;;
-              "30 14 * * *") echo "NICHE=bhakti" >> $GITHUB_ENV ;;
-              "30 17 * * *") echo "NICHE=motivation" >> $GITHUB_ENV ;;
+              "30 1 * * *"|"30 5 * * *"|"30 10 * * *"|"30 14 * * *") echo "NICHE=bhakti" >> $GITHUB_ENV ;;
+              "30 3 * * *"|"30 8 * * *"|"30 13 * * *"|"30 18 * * *") echo "NICHE=akonymous" >> $GITHUB_ENV ;;
+              "30 4 * * *"|"30 9 * * *"|"30 15 * * *"|"30 20 * * *") echo "NICHE=motivation" >> $GITHUB_ENV ;;
             esac
           fi
 
@@ -63,7 +72,6 @@ jobs:
           echo "DRIVE_FOLDER_ID_MOTIVATION=${{ secrets.DRIVE_FOLDER_ID_MOTIVATION }}" >> .env
           echo "${{ secrets.YT_DLP_COOKIES }}" > cookies.txt
           
-          # Handle tokens based on niche
           if [ "$NICHE" == "bhakti" ]; then
             echo '${{ secrets.YOUTUBE_TOKEN_JSON }}' > token_bhakti.json
           elif [ "$NICHE" == "akonymous" ]; then
